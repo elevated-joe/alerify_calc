@@ -23,7 +23,7 @@ var ADDONS = {
 // only. Rates are decomposed per vCPU-hour / per GB-RAM-hour so any pairing in
 // the table can be priced. Windows adds an OS-license uplift per vCPU-hour.
 // Excludes committed-use discounts, data transfer, support, SQL/other licensing.
-const COMPARE = {
+var COMPARE = {
   hoursMonth: 730,
   // Estimated average internet data-OUT per server per month, applied to every
   // server's AWS/Azure estimate (editable in the UI). Alerify bundles egress free.

@@ -31,17 +31,27 @@ All rates come from `Alerify_Pricing_Sheet.xlsx` and are baked into
 - **Add-ons** — EBS ($0.16/GB), Elastic IP ($4/ea), Advanced firewall
   ($380.45), SQL Standard ($528.50 per 2-core pack), RDS CAL ($11.69/ea).
 
-To update pricing you have two options:
+To update pricing, click **Edit pricing** in the header to open the inline
+catalog editor. You can:
 
-1. **Re-upload the sheet (no code).** In the app's **Pricing data** card, click
-   **Upload updated sheet (.xlsx)** and pick your edited `Alerify_Pricing_Sheet.xlsx`.
-   It's parsed in the browser (via the bundled `vendor/xlsx.full.min.js`) and
-   remembered on that device only — it does not change the site for other users.
-   **Reset to built-in** clears the override. Keep the sheet's tab and column
-   layout unchanged, and save from Excel/Google Sheets/LibreOffice so formula
-   values are stored.
-2. **Edit the defaults in code.** Change the `ADDONS` object or `COMPUTE` array
-   in `data.js` and push — this updates the built-in pricing for everyone.
+- Edit **add-on & service** costs and client prices (EBS, Elastic IP, firewalls,
+  SQL, RDS CAL).
+- Edit the **cloud comparison rates** (AWS/Azure per-vCPU, per-GB, storage, IP,
+  SQL, egress) and the global hours/avg-egress assumptions.
+- Edit the **compute catalog** — every vCPU/RAM instance's name, spec, and
+  Linux/Windows price & cost — and **+ Add instance** / remove rows.
+
+Edits apply to the calculator live and are saved on that device (localStorage),
+so they don't change the site for other users. Then:
+
+- **Export data.js** downloads a `data.js` reflecting your edits — commit it over
+  the existing `data.js` and push to make the change the built-in default for
+  everyone.
+- **Reset to defaults** restores the built-in pricing.
+- **Import .xlsx** pulls rates from an `Alerify_Pricing_Sheet.xlsx` (parsed in the
+  browser via the bundled `vendor/xlsx.full.min.js`) as a starting point you can
+  then fine-tune. Keep the sheet's tab/column layout and save from
+  Excel/Google Sheets/LibreOffice so formula values are stored.
 
 ## Deploying to GitHub Pages
 

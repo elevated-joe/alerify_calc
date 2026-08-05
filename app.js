@@ -11,10 +11,11 @@
   const fmt0 = (n) =>
     "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-  // Original built-in data, kept so "Reset to built-in" can restore it.
-  const BUILTIN_COMPUTE = COMPUTE;
-  const BUILTIN_ADDONS = ADDONS;
-  const PRICING_KEY = "alerify_pricing_v1";
+  // Original built-in data (deep-frozen snapshots) so "Reset to defaults" works.
+  const BUILTIN_COMPUTE = JSON.parse(JSON.stringify(COMPUTE));
+  const BUILTIN_ADDONS = JSON.parse(JSON.stringify(ADDONS));
+  const BUILTIN_COMPARE = JSON.parse(JSON.stringify(COMPARE));
+  const PRICING_KEY = "alerify_pricing_v2";
 
   // Derived lookups — rebuilt whenever the pricing data changes.
   let VCPU_OPTIONS = [];
@@ -77,10 +78,9 @@
     return { lines, client, cost, comparable, profit: client - cost, inst };
   }
 
-  // Global estimated average egress per server (GB/mo), from the UI control.
+  // Global estimated average egress per server (GB/mo), stored in COMPARE.
   function avgEgress() {
-    const el = document.getElementById("egressAvg");
-    return Math.max(0, parseFloat(el && el.value) || 0);
+    return Math.max(0, COMPARE.avgEgressGBPerServer || 0);
   }
 
   /* ---------- Cloud comparison for one server (infra only) ---------- */
@@ -272,7 +272,6 @@
       quoteName: document.getElementById("quoteName").value,
       quoteRef: document.getElementById("quoteRef").value,
       firewall: document.getElementById("fwSelect").value,
-      egressAvg: document.getElementById("egressAvg").value,
       internal: document.getElementById("internalToggle").checked,
       compare: document.getElementById("compareToggle").checked,
       servers: [...serversEl.querySelectorAll(".server")].map((c) => readCard(c)),
@@ -287,7 +286,6 @@
       document.getElementById("quoteName").value = data.quoteName || "";
       document.getElementById("quoteRef").value = data.quoteRef || "";
       document.getElementById("fwSelect").value = data.firewall || "standard";
-      if (data.egressAvg != null) document.getElementById("egressAvg").value = data.egressAvg;
       document.getElementById("internalToggle").checked = !!data.internal;
       document.getElementById("compareToggle").checked = !!data.compare;
       document.body.classList.toggle("show-internal", !!data.internal);
@@ -435,16 +433,7 @@
     return { compute, addons, count: compute.length };
   }
 
-  // Point the live pricing at new data and refresh every dependent view.
-  function applyPricing(compute, addons) {
-    COMPUTE = compute;
-    ADDONS = addons;
-    rebuildIndexes();
-    refreshServerOptions();
-    recompute();
-  }
-
-  // Re-populate each server's vCPU/RAM dropdowns against the current table,
+  // Re-populate each server's vCPU/RAM dropdowns against the current catalog,
   // preserving the current selection where it still exists.
   function refreshServerOptions() {
     serversEl.querySelectorAll(".server").forEach((card) => {
@@ -457,10 +446,59 @@
     });
   }
 
-  function setPricingSource(text, custom) {
-    const el = document.getElementById("pricingSource");
-    el.textContent = text;
-    el.classList.toggle("custom", !!custom);
+  // Called after any edit to the pricing data: rebuild indexes, refresh the
+  // calculator, persist, and update the editor's dirty indicator.
+  function pricingChanged() {
+    rebuildIndexes();
+    refreshServerOptions();
+    document.getElementById("egressAvg").value = COMPARE.avgEgressGBPerServer;
+    recompute();
+    persistPricing();
+    updateEditorState();
+  }
+
+  function persistPricing() {
+    try {
+      localStorage.setItem(PRICING_KEY, JSON.stringify({ compute: COMPUTE, addons: ADDONS, compare: COMPARE }));
+    } catch (e) {}
+  }
+
+  // Restore edited pricing (before servers are created on boot).
+  function loadStoredPricing() {
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(PRICING_KEY) || "null"); } catch (e) {}
+    if (!stored) return;
+    if (Array.isArray(stored.compute) && stored.compute.length) COMPUTE = stored.compute;
+    if (stored.addons) ADDONS = Object.assign({}, BUILTIN_ADDONS, stored.addons, { sqlMinCores: BUILTIN_ADDONS.sqlMinCores });
+    if (stored.compare) COMPARE = deepMerge(JSON.parse(JSON.stringify(BUILTIN_COMPARE)), stored.compare);
+    rebuildIndexes();
+  }
+
+  function deepMerge(base, over) {
+    for (const k in over) {
+      if (over[k] && typeof over[k] === "object" && !Array.isArray(over[k]))
+        base[k] = deepMerge(base[k] || {}, over[k]);
+      else base[k] = over[k];
+    }
+    return base;
+  }
+
+  function isDefaultPricing() {
+    return JSON.stringify(COMPUTE) === JSON.stringify(BUILTIN_COMPUTE) &&
+      JSON.stringify(ADDONS) === JSON.stringify(BUILTIN_ADDONS) &&
+      JSON.stringify(COMPARE) === JSON.stringify(BUILTIN_COMPARE);
+  }
+
+  function resetPricing() {
+    if (!confirm("Reset all pricing back to the built-in defaults?")) return;
+    COMPUTE = JSON.parse(JSON.stringify(BUILTIN_COMPUTE));
+    ADDONS = JSON.parse(JSON.stringify(BUILTIN_ADDONS));
+    COMPARE = JSON.parse(JSON.stringify(BUILTIN_COMPARE));
+    try { localStorage.removeItem(PRICING_KEY); } catch (e) {}
+    document.getElementById("pricingFile").value = "";
+    document.getElementById("pricingStatus").textContent = "";
+    renderEditor();
+    pricingChanged();
   }
 
   function handlePricingFile(file) {
@@ -469,16 +507,12 @@
     reader.onload = () => {
       try {
         const parsed = parseWorkbook(reader.result);
-        applyPricing(parsed.compute, parsed.addons);
-        const when = new Date().toLocaleString("en-US");
-        try {
-          localStorage.setItem(PRICING_KEY, JSON.stringify({
-            compute: parsed.compute, addons: parsed.addons, name: file.name, when,
-          }));
-        } catch (e) {}
-        setPricingSource(`Using uploaded sheet: ${file.name} (loaded ${when}).`, true);
+        COMPUTE = parsed.compute;
+        ADDONS = parsed.addons;
+        renderEditor();
+        pricingChanged();
         status.className = "pricing-status ok";
-        status.textContent = `✓ Loaded ${parsed.count} instances and add-on rates.`;
+        status.textContent = `✓ Imported ${parsed.count} instances and add-on rates from ${file.name}.`;
       } catch (err) {
         status.className = "pricing-status err";
         status.textContent = "✕ " + (err && err.message ? err.message : "Could not read that file.");
@@ -491,26 +525,164 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function resetPricing() {
-    applyPricing(BUILTIN_COMPUTE, BUILTIN_ADDONS);
-    try { localStorage.removeItem(PRICING_KEY); } catch (e) {}
-    setPricingSource("Using built-in pricing (from Alerify_Pricing_Sheet.xlsx).", false);
-    const status = document.getElementById("pricingStatus");
-    status.className = "pricing-status";
-    status.textContent = "";
-    document.getElementById("pricingFile").value = "";
+  /* ---------- Inline pricing editor ---------- */
+  const ADDON_ROWS = [
+    { key: "ebsPerGB", label: "EBS storage", basis: "per GB / mo" },
+    { key: "elasticIp", label: "Elastic IP", basis: "per IP / mo" },
+    { key: "firewallStd", label: "Standard firewall", basis: "flat / mo" },
+    { key: "firewallAdv", label: "Advanced firewall — Small", basis: "flat / mo" },
+    { key: "sqlPer2Core", label: "SQL Standard", basis: "per 2-core pack / mo" },
+    { key: "rdsCal", label: "RDS CAL", basis: "per CAL / mo" },
+  ];
+  const COMPARE_GLOBAL = [
+    { key: "hoursMonth", label: "Hours / month" },
+    { key: "avgEgressGBPerServer", label: "Avg data-out / server (GB/mo)" },
+  ];
+  const COMPARE_PROVIDER = [
+    { key: "vcpuHr", label: "$ / vCPU-hr" },
+    { key: "gbHr", label: "$ / GB-RAM-hr" },
+    { key: "winVcpuHr", label: "Windows $ / vCPU-hr" },
+    { key: "storageGB", label: "Storage $ / GB-mo" },
+    { key: "ipMonth", label: "Public IP $ / mo" },
+    { key: "sqlPer2Core", label: "SQL $ / 2-core pack" },
+    { key: "egressGB", label: "Egress $ / GB" },
+  ];
+
+  function numInput(value, step, onInput) {
+    const i = document.createElement("input");
+    i.type = "number"; i.step = step || "0.01"; i.value = value;
+    i.addEventListener("input", () => onInput(parseFloat(i.value)));
+    return i;
   }
 
-  // Restore a previously uploaded sheet (before servers are created on boot).
-  function loadStoredPricing() {
-    let stored = null;
-    try { stored = JSON.parse(localStorage.getItem(PRICING_KEY) || "null"); } catch (e) {}
-    if (stored && Array.isArray(stored.compute) && stored.compute.length) {
-      COMPUTE = stored.compute;
-      ADDONS = Object.assign({}, BUILTIN_ADDONS, stored.addons, { sqlMinCores: BUILTIN_ADDONS.sqlMinCores });
-      rebuildIndexes();
-      setPricingSource(`Using uploaded sheet: ${stored.name || "custom"} (loaded ${stored.when || "previously"}).`, true);
+  function renderAddonEditor() {
+    const body = document.getElementById("addonBody");
+    body.innerHTML = "";
+    ADDON_ROWS.forEach((row) => {
+      const tr = document.createElement("tr");
+      const a = ADDONS[row.key];
+      const tdLabel = document.createElement("td"); tdLabel.innerHTML = `<strong>${row.label}</strong>`;
+      const tdBasis = document.createElement("td"); tdBasis.className = "muted"; tdBasis.textContent = row.basis;
+      const tdCost = document.createElement("td"); tdCost.className = "num";
+      tdCost.appendChild(numInput(a.cost, "0.01", (v) => { a.cost = isFinite(v) ? v : 0; pricingChanged(); }));
+      const tdClient = document.createElement("td"); tdClient.className = "num";
+      tdClient.appendChild(numInput(a.client, "0.01", (v) => { a.client = isFinite(v) ? v : 0; pricingChanged(); }));
+      tr.append(tdLabel, tdBasis, tdCost, tdClient);
+      body.appendChild(tr);
+    });
+  }
+
+  function renderCompareEditor() {
+    const host = document.getElementById("compareEditor");
+    host.innerHTML = "";
+    const globals = document.createElement("div");
+    globals.className = "cmp-grid";
+    COMPARE_GLOBAL.forEach((f) => {
+      const wrap = document.createElement("label"); wrap.className = "cmp-field";
+      wrap.innerHTML = `<span>${f.label}</span>`;
+      wrap.appendChild(numInput(COMPARE[f.key], "1", (v) => { COMPARE[f.key] = isFinite(v) ? v : 0; pricingChanged(); }));
+      globals.appendChild(wrap);
+    });
+    host.appendChild(globals);
+
+    ["aws", "azure"].forEach((prov) => {
+      const card = document.createElement("div"); card.className = "cmp-provider";
+      card.innerHTML = `<h4>${COMPARE[prov].label}</h4>`;
+      const grid = document.createElement("div"); grid.className = "cmp-grid";
+      COMPARE_PROVIDER.forEach((f) => {
+        const wrap = document.createElement("label"); wrap.className = "cmp-field";
+        wrap.innerHTML = `<span>${f.label}</span>`;
+        wrap.appendChild(numInput(COMPARE[prov][f.key], "0.001", (v) => { COMPARE[prov][f.key] = isFinite(v) ? v : 0; pricingChanged(); }));
+        grid.appendChild(wrap);
+      });
+      card.appendChild(grid);
+      host.appendChild(card);
+    });
+  }
+
+  function renderComputeEditor() {
+    const body = document.getElementById("computeBody");
+    document.getElementById("computeCount").textContent = COMPUTE.length;
+    body.innerHTML = "";
+    COMPUTE.forEach((c, i) => {
+      const tr = document.createElement("tr");
+      const txt = document.createElement("td");
+      const name = document.createElement("input"); name.type = "text"; name.value = c.name;
+      name.addEventListener("input", () => { c.name = name.value; persistPricing(); updateEditorState(); });
+      txt.appendChild(name);
+      const cell = (val, step, set) => {
+        const td = document.createElement("td"); td.className = "num";
+        td.appendChild(numInput(val, step, set));
+        return td;
+      };
+      const structural = () => { pricingChanged(); };
+      tr.append(
+        txt,
+        cell(c.vcpu, "1", (v) => { c.vcpu = isFinite(v) ? v : 0; structural(); }),
+        cell(c.ram, "1", (v) => { c.ram = isFinite(v) ? v : 0; structural(); }),
+        cell(c.linuxClient, "0.01", (v) => { c.linuxClient = isFinite(v) ? v : 0; pricingChanged(); }),
+        cell(c.linuxCost, "0.01", (v) => { c.linuxCost = isFinite(v) ? v : 0; pricingChanged(); }),
+        cell(c.winClient, "0.01", (v) => { c.winClient = isFinite(v) ? v : 0; pricingChanged(); }),
+        cell(c.winCost, "0.01", (v) => { c.winCost = isFinite(v) ? v : 0; pricingChanged(); })
+      );
+      const rm = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.className = "btn btn-icon"; btn.textContent = "✕"; btn.title = "Remove instance";
+      btn.addEventListener("click", () => { COMPUTE.splice(i, 1); renderComputeEditor(); pricingChanged(); });
+      rm.appendChild(btn); tr.appendChild(rm);
+      body.appendChild(tr);
+    });
+  }
+
+  function renderEditor() {
+    renderAddonEditor();
+    renderCompareEditor();
+    renderComputeEditor();
+    updateEditorState();
+  }
+
+  function updateEditorState() {
+    const el = document.getElementById("editorState");
+    if (!el) return;
+    if (isDefaultPricing()) {
+      el.textContent = "Matches built-in defaults.";
+      el.classList.remove("custom");
+    } else {
+      el.textContent = "Custom pricing (saved on this device). Use “Export data.js” to bake it into the site for everyone.";
+      el.classList.add("custom");
     }
+  }
+
+  function openEditor() {
+    renderEditor();
+    document.getElementById("editor").hidden = false;
+    document.body.classList.add("editing");
+    window.scrollTo(0, 0);
+  }
+  function closeEditor() {
+    document.getElementById("editor").hidden = true;
+    document.body.classList.remove("editing");
+  }
+
+  /* ---------- Export data.js ---------- */
+  function exportDataJs() {
+    const lines = [];
+    lines.push("// Alerify pricing data — exported from the in-app editor.");
+    lines.push("// Replace data.js with this file to update built-in pricing for everyone.");
+    lines.push("// All prices are MONTHLY (USD). 'client' = customer price, 'cost' = Alerify cost.");
+    lines.push("");
+    lines.push("var ADDONS = " + JSON.stringify(ADDONS, null, 2) + ";");
+    lines.push("");
+    lines.push("var COMPARE = " + JSON.stringify(COMPARE, null, 2) + ";");
+    lines.push("");
+    lines.push("var COMPUTE = " + JSON.stringify(COMPUTE) + ";");
+    lines.push("");
+    const blob = new Blob([lines.join("\n")], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "data.js";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
   }
 
   /* ---------- Global controls ---------- */
@@ -527,11 +699,22 @@
     document.body.classList.toggle("show-compare", e.target.checked); save();
   });
   document.getElementById("fwSelect").addEventListener("change", recompute);
-  document.getElementById("egressAvg").addEventListener("input", recompute);
+  document.getElementById("egressAvg").addEventListener("input", (e) => {
+    COMPARE.avgEgressGBPerServer = Math.max(0, parseFloat(e.target.value) || 0);
+    recompute(); persistPricing(); updateEditorState();
+  });
   document.getElementById("pricingFile").addEventListener("change", (e) => {
     if (e.target.files && e.target.files[0]) handlePricingFile(e.target.files[0]);
   });
   document.getElementById("resetPricing").addEventListener("click", resetPricing);
+  document.getElementById("editPricingBtn").addEventListener("click", openEditor);
+  document.getElementById("closeEditor").addEventListener("click", closeEditor);
+  document.getElementById("exportData").addEventListener("click", exportDataJs);
+  document.getElementById("addInstance").addEventListener("click", () => {
+    COMPUTE.push({ family: "Custom", name: "new.instance", vcpu: 1, ram: 2,
+      linuxClient: 0, linuxCost: 0, winClient: 0, winCost: 0 });
+    renderComputeEditor(); pricingChanged();
+  });
   ["quoteName", "quoteRef"].forEach((id) =>
     document.getElementById(id).addEventListener("input", save));
 
@@ -540,6 +723,7 @@
 
   // Boot.
   loadStoredPricing();
+  document.getElementById("egressAvg").value = COMPARE.avgEgressGBPerServer;
   load();
   recompute();
 })();
