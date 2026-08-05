@@ -66,6 +66,12 @@
     return { lines, client, cost, comparable, profit: client - cost, inst };
   }
 
+  // Global estimated average egress per server (GB/mo), from the UI control.
+  function avgEgress() {
+    const el = document.getElementById("egressAvg");
+    return Math.max(0, parseFloat(el && el.value) || 0);
+  }
+
   /* ---------- Cloud comparison for one server (infra only) ---------- */
   function cloudCompare(v) {
     function calc(p) {
@@ -79,7 +85,7 @@
         const packs = Math.ceil(Math.max(ADDONS.sqlMinCores, v.vcpu) / 2);
         sql = packs * p.sqlPer2Core;
       }
-      const egress = v.egress * p.egressGB; // Alerify bundles this at no charge
+      const egress = avgEgress() * p.egressGB; // per-server avg; Alerify bundles free
       return compute + storage + ip + sql + egress;
     }
     return { aws: calc(COMPARE.aws), azure: calc(COMPARE.azure) };
@@ -144,7 +150,6 @@
       ram: parseInt(card.querySelector(".f-ram").value, 10),
       ebs: Math.max(0, parseFloat(card.querySelector(".f-ebs").value) || 0),
       eip: Math.max(0, parseInt(card.querySelector(".f-eip").value, 10) || 0),
-      egress: Math.max(0, parseFloat(card.querySelector(".f-egress").value) || 0),
       rds: Math.max(0, parseInt(card.querySelector(".f-rds").value, 10) || 0),
       sql: card.querySelector(".f-sql").checked,
     };
@@ -236,7 +241,6 @@
     fillRam(node, p.ram);
     node.querySelector(".f-ebs").value = p.ebs != null ? p.ebs : 0;
     node.querySelector(".f-eip").value = p.eip != null ? p.eip : 1;
-    node.querySelector(".f-egress").value = p.egress != null ? p.egress : 0;
     node.querySelector(".f-rds").value = p.rds != null ? p.rds : 0;
     node.querySelector(".f-sql").checked = !!p.sql;
 
@@ -257,6 +261,7 @@
       quoteName: document.getElementById("quoteName").value,
       quoteRef: document.getElementById("quoteRef").value,
       firewall: document.getElementById("fwSelect").value,
+      egressAvg: document.getElementById("egressAvg").value,
       internal: document.getElementById("internalToggle").checked,
       compare: document.getElementById("compareToggle").checked,
       servers: [...serversEl.querySelectorAll(".server")].map((c) => readCard(c)),
@@ -271,6 +276,7 @@
       document.getElementById("quoteName").value = data.quoteName || "";
       document.getElementById("quoteRef").value = data.quoteRef || "";
       document.getElementById("fwSelect").value = data.firewall || "standard";
+      if (data.egressAvg != null) document.getElementById("egressAvg").value = data.egressAvg;
       document.getElementById("internalToggle").checked = !!data.internal;
       document.getElementById("compareToggle").checked = !!data.compare;
       document.body.classList.toggle("show-internal", !!data.internal);
@@ -376,6 +382,7 @@
     document.body.classList.toggle("show-compare", e.target.checked); save();
   });
   document.getElementById("fwSelect").addEventListener("change", recompute);
+  document.getElementById("egressAvg").addEventListener("input", recompute);
   ["quoteName", "quoteRef"].forEach((id) =>
     document.getElementById(id).addEventListener("input", save));
 

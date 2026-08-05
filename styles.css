@@ -198,6 +198,10 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .compare-table tr.total td { border-top: 2px solid var(--line); font-weight: 800; padding-top: 9px; }
 
 .compare-panel { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.compare-panel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.compare-panel-head h3 { margin: 0; }
+.field-inline { flex: 0 0 auto; min-width: 210px; }
+.field-inline input { max-width: 220px; }
 .compare-panel h3 { margin: 0 0 14px; font-size: 15px; }
 .compare-panel h3 small { font-weight: 500; color: var(--ink-soft); font-size: 12px; }
 .metric-value.pos { color: var(--good); font-size: 18px; }

@@ -25,6 +25,9 @@ const ADDONS = {
 // Excludes committed-use discounts, data transfer, support, SQL/other licensing.
 const COMPARE = {
   hoursMonth: 730,
+  // Estimated average internet data-OUT per server per month, applied to every
+  // server's AWS/Azure estimate (editable in the UI). Alerify bundles egress free.
+  avgEgressGBPerServer: 500,
   // SQL Standard licensing (License Included) is passed through by both clouds
   // at roughly the Microsoft SPLA rate, per 2-core pack per month, 4-core min.
   aws: {
