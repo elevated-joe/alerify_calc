@@ -10,8 +10,9 @@ const ADDONS = {
   // Firewalls, flat per month
   firewallStd:     { client: 0.00,  cost: 0.00 },
   firewallAdv:     { client: 380.45, cost: 116.22 },
-  // SQL Standard, per 2-core pack per month (min 4 cores per SQL VM)
-  sqlPer2Core:     { client: 528.50, cost: 302.00 },
+  // SQL Standard, per 2-core pack per month (min 4 cores => min 2 packs per SQL VM).
+  // Cost is $151/pack; the 4-core minimum therefore lists at $302 cost / $528.50 client.
+  sqlPer2Core:     { client: 264.25, cost: 151.00 },
   sqlMinCores:     4,
   // RDS Client Access License, per CAL per month
   rdsCal:          { client: 11.69, cost: 6.68 },
