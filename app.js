@@ -11,8 +11,19 @@
   const fmt0 = (n) =>
     "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-  const VCPU_OPTIONS = [...new Set(COMPUTE.map((c) => c.vcpu))].sort((a, b) => a - b);
-  const BY_KEY = new Map(COMPUTE.map((c) => [c.vcpu + "|" + c.ram, c]));
+  // Original built-in data, kept so "Reset to built-in" can restore it.
+  const BUILTIN_COMPUTE = COMPUTE;
+  const BUILTIN_ADDONS = ADDONS;
+  const PRICING_KEY = "alerify_pricing_v1";
+
+  // Derived lookups — rebuilt whenever the pricing data changes.
+  let VCPU_OPTIONS = [];
+  let BY_KEY = new Map();
+  function rebuildIndexes() {
+    VCPU_OPTIONS = [...new Set(COMPUTE.map((c) => c.vcpu))].sort((a, b) => a - b);
+    BY_KEY = new Map(COMPUTE.map((c) => [c.vcpu + "|" + c.ram, c]));
+  }
+  rebuildIndexes();
 
   const serversEl = document.getElementById("servers");
   const tpl = document.getElementById("serverTemplate");
@@ -368,6 +379,140 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  /* ---------- Pricing sheet upload ---------- */
+  // Parse an uploaded workbook using the same column mapping as the source sheet.
+  // Columns (0-based): A0 B1 C2 D3 ... F5 ... H7 ... L11 ... P15 ... U20 ... Y24
+  function parseWorkbook(arrayBuffer) {
+    if (typeof XLSX === "undefined") throw new Error("Spreadsheet library failed to load.");
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+    const wsName = wb.SheetNames.indexOf("zCompute_Products") >= 0 ? "zCompute_Products" : wb.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wsName], { header: 1, raw: true, blankrows: false });
+    const num = (x) => typeof x === "number" && isFinite(x);
+
+    // Monthly price = the sheet's derived client/cost columns when present, else
+    // the raw hourly-rate inputs × 744 (matching the sheet's own formulas). The
+    // hourly columns are literals, so they survive tools that drop cached values.
+    const HOURS = 744;
+    const pick = (primary, hourly) =>
+      num(primary) ? primary : (num(hourly) ? hourly * HOURS : NaN);
+
+    const compute = [];
+    const a = {};
+    for (const r of rows) {
+      const label = (r[0] == null ? "" : String(r[0])).trim();
+      if (/^Z/i.test(label)) {
+        const linuxClient = pick(r[11], r[5]);   // L or F(Linux list)×744
+        const linuxCost   = pick(r[15], r[7]);   // P or H(Linux net)×744
+        const winClient   = pick(r[20], r[6]);   // U or G(Windows list)×744
+        const winCost     = pick(r[24], r[8]);   // Y or I(Windows net)×744
+        if ([linuxClient, linuxCost, winClient, winCost].every(num) && num(r[2]) && num(r[3])) {
+          compute.push({
+            family: label, name: String(r[1]), vcpu: r[2], ram: r[3],
+            linuxClient: +linuxClient.toFixed(2), linuxCost: +linuxCost.toFixed(2),
+            winClient: +winClient.toFixed(2), winCost: +winCost.toFixed(2),
+          });
+        }
+        continue;
+      }
+      const lo = label.toLowerCase(), c = r[5], k = r[7];
+      if (!num(c)) continue;
+      if (lo.startsWith("ebs")) a.ebsPerGB = { client: c, cost: k };
+      else if (lo.startsWith("elastic ip")) a.elasticIp = { client: c, cost: k };
+      else if (lo.startsWith("standard firewall")) a.firewallStd = { client: c, cost: k };
+      else if (lo.startsWith("advance firewall") || lo.startsWith("advanced firewall")) a.firewallAdv = { client: c, cost: k };
+      else if (lo.startsWith("sql standard")) a.sqlPer2Core = { client: +(c / 2).toFixed(2), cost: +(k / 2).toFixed(2) };
+      else if (lo.startsWith("rds client access")) a.rdsCal = { client: c, cost: k };
+    }
+
+    if (compute.length < 10) {
+      throw new Error(
+        "Couldn't read the pricing table. Make sure this is the Alerify sheet with its " +
+        "original tab and columns, saved from Excel (open it and re-save if it came from a script)."
+      );
+    }
+    // Merge parsed add-ons over the built-in defaults so anything missing keeps a sane value.
+    const addons = Object.assign({}, BUILTIN_ADDONS, a, { sqlMinCores: BUILTIN_ADDONS.sqlMinCores });
+    return { compute, addons, count: compute.length };
+  }
+
+  // Point the live pricing at new data and refresh every dependent view.
+  function applyPricing(compute, addons) {
+    COMPUTE = compute;
+    ADDONS = addons;
+    rebuildIndexes();
+    refreshServerOptions();
+    recompute();
+  }
+
+  // Re-populate each server's vCPU/RAM dropdowns against the current table,
+  // preserving the current selection where it still exists.
+  function refreshServerOptions() {
+    serversEl.querySelectorAll(".server").forEach((card) => {
+      const vcpuSel = card.querySelector(".f-vcpu");
+      const curV = parseInt(vcpuSel.value, 10);
+      const curR = parseInt(card.querySelector(".f-ram").value, 10);
+      vcpuSel.innerHTML = VCPU_OPTIONS.map((n) => `<option value="${n}">${n}</option>`).join("");
+      vcpuSel.value = VCPU_OPTIONS.indexOf(curV) >= 0 ? curV : VCPU_OPTIONS[0];
+      fillRam(card, curR);
+    });
+  }
+
+  function setPricingSource(text, custom) {
+    const el = document.getElementById("pricingSource");
+    el.textContent = text;
+    el.classList.toggle("custom", !!custom);
+  }
+
+  function handlePricingFile(file) {
+    const status = document.getElementById("pricingStatus");
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = parseWorkbook(reader.result);
+        applyPricing(parsed.compute, parsed.addons);
+        const when = new Date().toLocaleString("en-US");
+        try {
+          localStorage.setItem(PRICING_KEY, JSON.stringify({
+            compute: parsed.compute, addons: parsed.addons, name: file.name, when,
+          }));
+        } catch (e) {}
+        setPricingSource(`Using uploaded sheet: ${file.name} (loaded ${when}).`, true);
+        status.className = "pricing-status ok";
+        status.textContent = `✓ Loaded ${parsed.count} instances and add-on rates.`;
+      } catch (err) {
+        status.className = "pricing-status err";
+        status.textContent = "✕ " + (err && err.message ? err.message : "Could not read that file.");
+      }
+    };
+    reader.onerror = () => {
+      status.className = "pricing-status err";
+      status.textContent = "✕ Could not read that file.";
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function resetPricing() {
+    applyPricing(BUILTIN_COMPUTE, BUILTIN_ADDONS);
+    try { localStorage.removeItem(PRICING_KEY); } catch (e) {}
+    setPricingSource("Using built-in pricing (from Alerify_Pricing_Sheet.xlsx).", false);
+    const status = document.getElementById("pricingStatus");
+    status.className = "pricing-status";
+    status.textContent = "";
+    document.getElementById("pricingFile").value = "";
+  }
+
+  // Restore a previously uploaded sheet (before servers are created on boot).
+  function loadStoredPricing() {
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(PRICING_KEY) || "null"); } catch (e) {}
+    if (stored && Array.isArray(stored.compute) && stored.compute.length) {
+      COMPUTE = stored.compute;
+      ADDONS = Object.assign({}, BUILTIN_ADDONS, stored.addons, { sqlMinCores: BUILTIN_ADDONS.sqlMinCores });
+      rebuildIndexes();
+      setPricingSource(`Using uploaded sheet: ${stored.name || "custom"} (loaded ${stored.when || "previously"}).`, true);
+    }
+  }
+
   /* ---------- Global controls ---------- */
   document.getElementById("addServer").addEventListener("click", () => { addServer(); recompute(); });
   document.getElementById("clearAll").addEventListener("click", () => {
@@ -383,6 +528,10 @@
   });
   document.getElementById("fwSelect").addEventListener("change", recompute);
   document.getElementById("egressAvg").addEventListener("input", recompute);
+  document.getElementById("pricingFile").addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) handlePricingFile(e.target.files[0]);
+  });
+  document.getElementById("resetPricing").addEventListener("click", resetPricing);
   ["quoteName", "quoteRef"].forEach((id) =>
     document.getElementById(id).addEventListener("input", save));
 
@@ -390,6 +539,7 @@
   window.addEventListener("beforeprint", buildQuoteDoc);
 
   // Boot.
+  loadStoredPricing();
   load();
   recompute();
 })();

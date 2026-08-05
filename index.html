@@ -68,6 +68,24 @@
       </div>
     </section>
 
+    <section class="card pricing-data">
+      <h2>Pricing data</h2>
+      <p class="section-hint" id="pricingSource">Using built-in pricing (from Alerify_Pricing_Sheet.xlsx).</p>
+      <div class="pricing-actions">
+        <label class="btn btn-ghost file-btn">
+          Upload updated sheet (.xlsx)
+          <input type="file" id="pricingFile" accept=".xlsx" hidden />
+        </label>
+        <button id="resetPricing" class="btn btn-ghost" type="button">Reset to built-in</button>
+      </div>
+      <p class="pricing-status" id="pricingStatus"></p>
+      <p class="section-hint">
+        Re-upload the Alerify pricing sheet to refresh compute and add-on rates. Parsing happens
+        entirely in your browser and is remembered on this device — it does not change the site for
+        others. Keep the sheet's tab and column layout unchanged.
+      </p>
+    </section>
+
     <section class="summary card" id="summary">
       <h2>Quote summary</h2>
       <div class="summary-grid">
@@ -213,6 +231,7 @@
     </section>
   </template>
 
+  <script src="vendor/xlsx.full.min.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>

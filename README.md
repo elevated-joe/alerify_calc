@@ -31,7 +31,17 @@ All rates come from `Alerify_Pricing_Sheet.xlsx` and are baked into
 - **Add-ons** — EBS ($0.16/GB), Elastic IP ($4/ea), Advanced firewall
   ($380.45), SQL Standard ($528.50 per 2-core pack), RDS CAL ($11.69/ea).
 
-To update pricing, edit the `ADDONS` object or `COMPUTE` array in `data.js`.
+To update pricing you have two options:
+
+1. **Re-upload the sheet (no code).** In the app's **Pricing data** card, click
+   **Upload updated sheet (.xlsx)** and pick your edited `Alerify_Pricing_Sheet.xlsx`.
+   It's parsed in the browser (via the bundled `vendor/xlsx.full.min.js`) and
+   remembered on that device only — it does not change the site for other users.
+   **Reset to built-in** clears the override. Keep the sheet's tab and column
+   layout unchanged, and save from Excel/Google Sheets/LibreOffice so formula
+   values are stored.
+2. **Edit the defaults in code.** Change the `ADDONS` object or `COMPUTE` array
+   in `data.js` and push — this updates the built-in pricing for everyone.
 
 ## Deploying to GitHub Pages
 

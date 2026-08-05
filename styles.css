@@ -169,6 +169,15 @@ input:focus, select:focus {
 }
 .shared-price .metric-value { font-size: 20px; }
 
+/* ---------- Pricing data card ---------- */
+.pricing-data h2 { margin: 0 0 4px; font-size: 17px; }
+.pricing-actions { display: flex; gap: 12px; margin: 12px 0 6px; flex-wrap: wrap; }
+.file-btn { cursor: pointer; display: inline-flex; align-items: center; }
+#pricingSource.custom { color: var(--good); font-weight: 600; }
+.pricing-status { margin: 4px 0 10px; font-size: 13px; font-weight: 600; min-height: 1em; }
+.pricing-status.ok { color: var(--good); }
+.pricing-status.err { color: var(--danger); }
+
 /* ---------- Internal view visibility ---------- */
 .internal-only { display: none; }
 body.show-internal .internal-only { display: flex; }
