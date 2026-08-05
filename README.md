@@ -1,7 +1,7 @@
 # Alerify Cloud Pricing Calculator
 
-A lightweight, per-server cloud pricing calculator that runs entirely in the
-browser and is hosted on **GitHub Pages** — no backend, no build step.
+A per-server cloud pricing calculator for Alerify quotes, built with **React +
+TypeScript + Vite** and deployed to **GitHub Pages**.
 
 Build a quote by adding one card per server and filling in the required fields:
 
@@ -13,73 +13,76 @@ Build a quote by adding one card per server and filling in the required fields:
 | **vCPU / RAM** | Only valid pairings from the Alerify reference table are selectable |
 | **EBS storage** | Billed per GB / month |
 | **Elastic IPs** | Billed per IP / month |
-| **Firewall** | Standard (included) or Advanced |
 | **RDS CALs** | Billed per CAL / month |
 
-The app shows a live per-server breakdown plus a rolled-up **monthly** and
-**annual** quote total. Flip on **Internal view** to also see Alerify's cost,
-profit and margin for each line. Quotes are auto-saved in the browser
-(`localStorage`) and can be exported with **Print / PDF**.
+Firewall is a **shared environment service** (Standard included / Advanced),
+applied once to the whole quote rather than per server.
 
-## Pricing data
+Features: live per-server breakdown, monthly + annual totals, an **Internal
+view** toggle (cost / profit / margin), a **Cloud comparison** toggle
+(estimated AWS/Azure for the comparable stack), a professional client-facing
+**PDF quote** (Export quote → print), and an inline **pricing editor**. State is
+auto-saved in the browser (localStorage).
 
-All rates come from `Alerify_Pricing_Sheet.xlsx` and are baked into
-[`data.js`](./data.js):
+## Editing pricing
 
-- **Compute** — 147 valid vCPU/RAM pairings (Z2 / Z4 / Z8 / Z16 families).
-  Monthly price = hourly list rate × 744 hours, per the source sheet.
-- **Add-ons** — EBS ($0.16/GB), Elastic IP ($4/ea), Advanced firewall
-  ($380.45), SQL Standard ($528.50 per 2-core pack), RDS CAL ($11.69/ea).
+Click **Edit pricing** in the header to open the inline editor:
 
-To update pricing, click **Edit pricing** in the header to open the inline
-catalog editor. You can:
+- **Add-ons & services** — cost + client price per item.
+- **Cloud comparison rates** — AWS/Azure per-vCPU/GB/storage/IP/SQL/egress plus
+  global hours and avg-egress assumptions.
+- **Compute catalog** — every vCPU/RAM instance (name, spec, Linux/Windows price
+  & cost), with add/remove rows. The Z-family is derived from the RAM/vCPU ratio.
 
-- Edit **add-on & service** costs and client prices (EBS, Elastic IP, firewalls,
-  SQL, RDS CAL).
-- Edit the **cloud comparison rates** (AWS/Azure per-vCPU, per-GB, storage, IP,
-  SQL, egress) and the global hours/avg-egress assumptions.
-- Edit the **compute catalog** — every vCPU/RAM instance's name, spec, and
-  Linux/Windows price & cost — and **+ Add instance** / remove rows.
+Edits apply live and are saved on that device (localStorage) only. Then:
 
-Edits apply to the calculator live and are saved on that device (localStorage),
-so they don't change the site for other users. Then:
-
-- **Export data.js** downloads a `data.js` reflecting your edits — commit it over
-  the existing `data.js` and push to make the change the built-in default for
-  everyone.
+- **Export data.ts** downloads a `src/data.ts` reflecting your edits — commit it
+  over the existing file to make it the built-in default for everyone.
 - **Reset to defaults** restores the built-in pricing.
 - **Import .xlsx** pulls rates from an `Alerify_Pricing_Sheet.xlsx` (parsed in the
-  browser via the bundled `vendor/xlsx.full.min.js`) as a starting point you can
-  then fine-tune. Keep the sheet's tab/column layout and save from
-  Excel/Google Sheets/LibreOffice so formula values are stored.
+  browser) as a starting point. Save the sheet from Excel/Google Sheets/LibreOffice
+  so formula values are stored, and keep the tab/column layout unchanged.
+
+## Development
+
+```bash
+npm install
+npm run dev       # start the Vite dev server (hot reload)
+npm run build     # type-check (tsc -b) + production build to dist/
+npm run preview   # serve the production build locally
+```
+
+Requires Node 18+.
 
 ## Deploying to GitHub Pages
 
-A workflow at [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml)
-publishes the site on every push to `main`.
+The workflow at `.github/workflows/deploy.yml` builds with Vite and publishes
+`dist/` on every push to `main`.
 
-1. Push this repository to GitHub.
-2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-3. Push to `main` (or run the workflow manually). The site publishes to
+1. In **Settings → Pages**, set **Source** to **GitHub Actions** (one time).
+2. Push to `main`. The site publishes to
    `https://<your-user>.github.io/alerify_calc/`.
 
-## Local preview
+The Vite `base` is set to `/alerify_calc/` in `vite.config.ts` to match that
+path — change it if you rename the repo or use a custom domain.
 
-It's plain static files — just open `index.html`, or serve the folder:
-
-```bash
-python3 -m http.server 8000
-# then visit http://localhost:8000
-```
-
-## Files
+## Project layout
 
 ```
-index.html   markup + server card template
-styles.css   styling (light theme, responsive, print-friendly)
-app.js       calculator logic, persistence, rendering
-data.js      pricing data extracted from the Alerify sheet
+index.html            Vite entry (mounts #root)
+vite.config.ts        base path + React plugin
+src/
+  main.tsx            React entry
+  App.tsx             app shell, state, totals, persistence
+  ServerCard.tsx      one server: inputs, breakdown, cloud comparison
+  Editor.tsx          inline pricing editor
+  QuoteDoc.tsx        client-facing quote (print / PDF)
+  pricing.ts          pure pricing + comparison functions
+  importXlsx.ts       in-browser .xlsx parser (lazy-loads the xlsx lib)
+  storage.ts          localStorage load/save + defaults
+  data.ts             built-in default pricing (generated from the sheet)
+  types.ts            shared types
+  styles.css          styling (responsive, print-friendly)
 ```
 
-> Estimates only. Figures are monthly USD and exclude taxes and any custom
-> engagement terms.
+> Estimates only. Figures are monthly USD and exclude taxes and custom terms.
