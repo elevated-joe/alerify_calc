@@ -3,6 +3,18 @@ import type { Addons, Compare, Instance, Provider, ServerConfig } from "./types"
 export const fmt = (n: number): string =>
   "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Margin on revenue: (price − cost) / price. Undefined when price is 0.
+export function marginPct(cost: number, client: number): number {
+  return client > 0 ? ((client - cost) / client) * 100 : 0;
+}
+
+// Inverse: the client price that yields the given margin for a cost.
+export function priceFromMargin(cost: number, margin: number): number {
+  const m = margin / 100;
+  if (m >= 1) return cost; // 100%+ margin is unreachable from a positive cost
+  return +(cost / (1 - m)).toFixed(2);
+}
+
 // Family follows the RAM-per-vCPU ratio (Z2=2, Z4=4, Z8=8, Z16=16).
 export function deriveFamily(vcpu: number, ram: number): string | null {
   if (vcpu > 0) {

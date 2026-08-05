@@ -198,6 +198,7 @@ body.editing main { display: none; }
 .edit-table td.muted { color: var(--ink-soft); }
 .edit-table input[type="text"] { min-width: 200px; }
 .edit-table input[type="number"] { width: 108px; text-align: right; }
+.edit-table input.margin-in { width: 74px; background: #f4f7ff; color: var(--accent-dark); font-weight: 600; }
 .edit-table .btn-icon { width: 28px; height: 28px; }
 
 .cmp-provider { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--card); }

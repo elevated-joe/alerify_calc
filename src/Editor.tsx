@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { Addons, Compare, Instance, Pricing, Provider } from "./types";
-import { deriveFamily } from "./pricing";
+import { deriveFamily, marginPct, priceFromMargin } from "./pricing";
 
 interface Props {
   pricing: Pricing;
@@ -44,6 +44,20 @@ function n(v: string): number {
   return isFinite(x) ? x : 0;
 }
 
+// Shows the margin (from cost vs price); typing a new margin sets the price.
+function MarginInput({ cost, client, onPrice }: { cost: number; client: number; onPrice: (price: number) => void }) {
+  return (
+    <input
+      type="number"
+      step={0.5}
+      className="margin-in"
+      value={Number(marginPct(cost, client).toFixed(1))}
+      onChange={(e) => onPrice(priceFromMargin(cost, n(e.target.value)))}
+      title="Editable — sets the price from cost and this margin"
+    />
+  );
+}
+
 const ComputeRow = memo(function ComputeRow({
   c,
   onField,
@@ -65,16 +79,22 @@ const ComputeRow = memo(function ComputeRow({
         <input type="number" step={1} value={c.ram} onChange={(e) => onField({ ram: n(e.target.value) })} />
       </td>
       <td className="num">
+        <input type="number" step={0.01} value={c.linuxCost} onChange={(e) => onField({ linuxCost: n(e.target.value) })} />
+      </td>
+      <td className="num">
         <input type="number" step={0.01} value={c.linuxClient} onChange={(e) => onField({ linuxClient: n(e.target.value) })} />
       </td>
       <td className="num">
-        <input type="number" step={0.01} value={c.linuxCost} onChange={(e) => onField({ linuxCost: n(e.target.value) })} />
+        <MarginInput cost={c.linuxCost} client={c.linuxClient} onPrice={(price) => onField({ linuxClient: price })} />
+      </td>
+      <td className="num">
+        <input type="number" step={0.01} value={c.winCost} onChange={(e) => onField({ winCost: n(e.target.value) })} />
       </td>
       <td className="num">
         <input type="number" step={0.01} value={c.winClient} onChange={(e) => onField({ winClient: n(e.target.value) })} />
       </td>
       <td className="num">
-        <input type="number" step={0.01} value={c.winCost} onChange={(e) => onField({ winCost: n(e.target.value) })} />
+        <MarginInput cost={c.winCost} client={c.winClient} onPrice={(price) => onField({ winClient: price })} />
       </td>
       <td>
         <button className="btn btn-icon" title="Remove instance" onClick={onRemove}>
@@ -188,6 +208,7 @@ export default function Editor({
               <th>Item</th>
               <th>Basis</th>
               <th className="num">Cost / mo</th>
+              <th className="num">Margin %</th>
               <th className="num">Client price / mo</th>
             </tr>
           </thead>
@@ -202,6 +223,9 @@ export default function Editor({
                   <td className="muted">{row.basis}</td>
                   <td className="num">
                     <input type="number" step={0.01} value={rate.cost} onChange={(e) => setAddon(row.key, "cost", n(e.target.value))} />
+                  </td>
+                  <td className="num">
+                    <MarginInput cost={rate.cost} client={rate.client} onPrice={(price) => setAddon(row.key, "client", price)} />
                   </td>
                   <td className="num">
                     <input type="number" step={0.01} value={rate.client} onChange={(e) => setAddon(row.key, "client", n(e.target.value))} />
@@ -255,10 +279,12 @@ export default function Editor({
               <th>Name</th>
               <th className="num">vCPU</th>
               <th className="num">RAM</th>
-              <th className="num">Linux price</th>
               <th className="num">Linux cost</th>
-              <th className="num">Windows price</th>
-              <th className="num">Windows cost</th>
+              <th className="num">Linux price</th>
+              <th className="num">Linux %</th>
+              <th className="num">Win cost</th>
+              <th className="num">Win price</th>
+              <th className="num">Win %</th>
               <th></th>
             </tr>
           </thead>
