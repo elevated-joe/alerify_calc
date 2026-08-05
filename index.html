@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alerify Cloud Pricing Calculator</title>
   <meta name="description" content="Per-server cloud pricing calculator for Alerify quotes." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -23,7 +22,12 @@
         <span class="switch-track"><span class="switch-thumb"></span></span>
         <span class="switch-label">Internal view</span>
       </label>
-      <button id="printBtn" class="btn btn-ghost" type="button">Print / PDF</button>
+      <label class="switch" title="Compare against estimated AWS / Azure list pricing">
+        <input type="checkbox" id="compareToggle" />
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Cloud comparison</span>
+      </label>
+      <button id="printBtn" class="btn btn-ghost" type="button">Export quote (PDF)</button>
     </div>
   </header>
 
@@ -45,6 +49,24 @@
       <button id="addServer" class="btn btn-primary" type="button">+ Add server</button>
       <button id="clearAll" class="btn btn-ghost" type="button">Clear all</button>
     </div>
+
+    <section class="card shared-services">
+      <h2>Shared environment services</h2>
+      <p class="section-hint">Applied once to the whole environment, not per server.</p>
+      <div class="shared-grid">
+        <div class="field">
+          <label for="fwSelect">Firewall</label>
+          <select id="fwSelect">
+            <option value="standard">Standard (included)</option>
+            <option value="advanced">Advanced — Small</option>
+          </select>
+        </div>
+        <div class="shared-price">
+          <span class="metric-label">Firewall / month</span>
+          <span class="metric-value" id="fwPrice">$0.00</span>
+        </div>
+      </div>
+    </section>
 
     <section class="summary card" id="summary">
       <h2>Quote summary</h2>
@@ -74,6 +96,36 @@
           <span class="metric-value" id="sumMargin">—</span>
         </div>
       </div>
+
+      <div class="compare-only compare-panel">
+        <h3>Infrastructure vs. public cloud <small>(compute + storage + IP, estimated on-demand list)</small></h3>
+        <div class="summary-grid">
+          <div class="summary-metric">
+            <span class="metric-label">Alerify (comparable)</span>
+            <span class="metric-value accent" id="cmpAlerify">$0.00</span>
+          </div>
+          <div class="summary-metric">
+            <span class="metric-label">AWS estimate</span>
+            <span class="metric-value" id="cmpAws">$0.00</span>
+          </div>
+          <div class="summary-metric">
+            <span class="metric-label">Azure estimate</span>
+            <span class="metric-value" id="cmpAzure">$0.00</span>
+          </div>
+          <div class="summary-metric">
+            <span class="metric-label">Savings vs AWS</span>
+            <span class="metric-value" id="cmpSaveAws">—</span>
+          </div>
+          <div class="summary-metric">
+            <span class="metric-label">Savings vs Azure</span>
+            <span class="metric-value" id="cmpSaveAzure">—</span>
+          </div>
+        </div>
+        <p class="section-hint">
+          Directional only. Cloud figures exclude committed-use discounts, data transfer,
+          support, SQL/other licensing, and managed-service value.
+        </p>
+      </div>
     </section>
 
     <p class="disclaimer">
@@ -82,6 +134,9 @@
       2-core pack with a 4-core minimum per SQL server. This tool is for estimation only.
     </p>
   </main>
+
+  <!-- Client-facing quote document, rendered only when printing / exporting to PDF -->
+  <div id="quoteDoc" aria-hidden="true"></div>
 
   <!-- Template for a server card -->
   <template id="serverTemplate">
@@ -124,14 +179,6 @@
         </div>
 
         <div class="field">
-          <label>Firewall</label>
-          <select class="f-fw">
-            <option value="standard">Standard (included)</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </div>
-
-        <div class="field">
           <label>RDS CALs</label>
           <input type="number" class="f-rds" min="0" step="1" value="0" />
         </div>
@@ -147,6 +194,12 @@
       <div class="server-breakdown">
         <table>
           <tbody class="breakdown-body"></tbody>
+        </table>
+      </div>
+
+      <div class="server-compare compare-only">
+        <table class="compare-table">
+          <tbody class="compare-body"></tbody>
         </table>
       </div>
     </section>
