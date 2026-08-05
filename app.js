@@ -29,11 +29,11 @@
   function priceServer(v) {
     const inst = BY_KEY.get(v.vcpu + "|" + v.ram);
     const lines = [];
-    let client = 0, cost = 0, infra = 0; // infra = compute + storage + IP (cloud-comparable)
+    let client = 0, cost = 0, comparable = 0; // comparable = compute + storage + IP + SQL
 
-    function add(label, detail, c, k, isInfra) {
+    function add(label, detail, c, k, isComparable) {
       client += c; cost += k;
-      if (isInfra) infra += c;
+      if (isComparable) comparable += c;
       lines.push({ label, detail, client: c, cost: k });
     }
 
@@ -56,14 +56,14 @@
       const cores = Math.max(ADDONS.sqlMinCores, v.vcpu);
       const packs = Math.ceil(cores / 2);
       add("SQL Standard", `${packs} × 2-core pack (${cores} cores)`,
-        packs * ADDONS.sqlPer2Core.client, packs * ADDONS.sqlPer2Core.cost, false);
+        packs * ADDONS.sqlPer2Core.client, packs * ADDONS.sqlPer2Core.cost, true);
     }
     if (v.rds > 0) {
       add("RDS CALs", `${v.rds} × ${fmt(ADDONS.rdsCal.client)}`,
         v.rds * ADDONS.rdsCal.client, v.rds * ADDONS.rdsCal.cost, false);
     }
 
-    return { lines, client, cost, infra, profit: client - cost, inst };
+    return { lines, client, cost, comparable, profit: client - cost, inst };
   }
 
   /* ---------- Cloud comparison for one server (infra only) ---------- */
@@ -74,7 +74,12 @@
         (p.vcpuHr * v.vcpu + p.gbHr * v.ram + (isWin ? p.winVcpuHr * v.vcpu : 0)) * COMPARE.hoursMonth;
       const storage = v.ebs * p.storageGB;
       const ip = v.eip * p.ipMonth;
-      return compute + storage + ip;
+      let sql = 0;
+      if (v.sql) {
+        const packs = Math.ceil(Math.max(ADDONS.sqlMinCores, v.vcpu) / 2);
+        sql = packs * p.sqlPer2Core;
+      }
+      return compute + storage + ip + sql;
     }
     return { aws: calc(COMPARE.aws), azure: calc(COMPARE.azure) };
   }
@@ -116,16 +121,16 @@
   }
   function renderCompare(tbody, priced, cmp) {
     tbody.innerHTML =
-      `<tr><th class="desc">Infrastructure (compute + storage + IP)</th>` +
+      `<tr><th class="desc">Comparable stack (compute + storage + IP + SQL)</th>` +
         `<th>Alerify</th><th>AWS</th><th>Azure</th></tr>` +
       `<tr><td class="desc">Estimated monthly</td>` +
-        `<td class="amt">${fmt(priced.infra)}</td>` +
+        `<td class="amt">${fmt(priced.comparable)}</td>` +
         `<td class="amt muted">${fmt(cmp.aws)}</td>` +
         `<td class="amt muted">${fmt(cmp.azure)}</td></tr>` +
       `<tr class="total"><td>Alerify vs. cloud</td>` +
         `<td class="amt">—</td>` +
-        deltaCell(cmp.aws, priced.infra) +
-        deltaCell(cmp.azure, priced.infra) +
+        deltaCell(cmp.aws, priced.comparable) +
+        deltaCell(cmp.azure, priced.comparable) +
       `</tr>`;
   }
 
@@ -156,7 +161,7 @@
   /* ---------- Recompute everything ---------- */
   function recompute() {
     const cards = [...serversEl.querySelectorAll(".server")];
-    let monthly = 0, cost = 0, infra = 0, aws = 0, azure = 0;
+    let monthly = 0, cost = 0, comparable = 0, aws = 0, azure = 0;
 
     cards.forEach((card) => {
       const v = readCard(card);
@@ -165,7 +170,7 @@
       renderBreakdown(card.querySelector(".breakdown-body"), priced);
       renderCompare(card.querySelector(".compare-body"), priced, cmp);
       card.querySelector(".server-subtotal").innerHTML = fmt(priced.client) + "<small>/mo</small>";
-      monthly += priced.client; cost += priced.cost; infra += priced.infra;
+      monthly += priced.client; cost += priced.cost; comparable += priced.comparable;
       aws += cmp.aws; azure += cmp.azure;
     });
 
@@ -183,11 +188,11 @@
       monthly > 0 ? (((monthly - cost) / monthly) * 100).toFixed(1) + "%" : "—";
 
     // Comparison summary.
-    document.getElementById("cmpAlerify").textContent = fmt(infra);
+    document.getElementById("cmpAlerify").textContent = fmt(comparable);
     document.getElementById("cmpAws").textContent = fmt(aws);
     document.getElementById("cmpAzure").textContent = fmt(azure);
-    setDeltaMetric("cmpSaveAws", aws, infra);
-    setDeltaMetric("cmpSaveAzure", azure, infra);
+    setDeltaMetric("cmpSaveAws", aws, comparable);
+    setDeltaMetric("cmpSaveAzure", azure, comparable);
 
     toggleEmptyState(cards.length === 0);
     save();

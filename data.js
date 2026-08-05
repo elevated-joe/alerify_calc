@@ -25,6 +25,8 @@ const ADDONS = {
 // Excludes committed-use discounts, data transfer, support, SQL/other licensing.
 const COMPARE = {
   hoursMonth: 730,
+  // SQL Standard licensing (License Included) is passed through by both clouds
+  // at roughly the Microsoft SPLA rate, per 2-core pack per month, 4-core min.
   aws: {
     label: "AWS",
     vcpuHr: 0.024,      // ~m5 general purpose, Linux
@@ -32,6 +34,7 @@ const COMPARE = {
     winVcpuHr: 0.046,   // Windows license uplift per vCPU-hr
     storageGB: 0.08,    // EBS gp3, per GB-month
     ipMonth: 3.65,      // public IPv4, $0.005/hr
+    sqlPer2Core: 146,   // SQL Standard License Included, per 2-core pack/month
   },
   azure: {
     label: "Azure",
@@ -40,6 +43,7 @@ const COMPARE = {
     winVcpuHr: 0.046,   // Windows license uplift per vCPU-hr
     storageGB: 0.10,    // managed SSD, per GB-month
     ipMonth: 2.92,      // standard public IP, $0.004/hr
+    sqlPer2Core: 146,   // SQL Standard License Included, per 2-core pack/month
   },
 };
 
