@@ -29,6 +29,18 @@
   const serversEl = document.getElementById("servers");
   const tpl = document.getElementById("serverTemplate");
 
+  // Family follows the RAM-per-vCPU ratio (Z2=2, Z4=4, Z8=8, Z16=16).
+  function deriveFamily(vcpu, ram) {
+    if (vcpu > 0) {
+      const r = ram / vcpu;
+      if (r === 2 || r === 4 || r === 8 || r === 16) return "Z" + r;
+    }
+    return null;
+  }
+  function familyLabel(c) {
+    return deriveFamily(c.vcpu, c.ram) || c.family || "Custom";
+  }
+
   /* ---------- Quote-level firewall ---------- */
   function firewallLine() {
     const adv = document.getElementById("fwSelect").value === "advanced";
@@ -171,7 +183,7 @@
     const ramSel = card.querySelector(".f-ram");
     const opts = COMPUTE.filter((c) => c.vcpu === vcpu).sort((a, b) => a.ram - b.ram);
     ramSel.innerHTML = opts
-      .map((c) => `<option value="${c.ram}">${c.ram} GB &nbsp;(${c.family})</option>`)
+      .map((c) => `<option value="${c.ram}">${c.ram} GB &nbsp;(${familyLabel(c)})</option>`)
       .join("");
     if (keepRam != null && opts.some((c) => c.ram === keepRam)) ramSel.value = keepRam;
   }
@@ -615,7 +627,8 @@
         td.appendChild(numInput(val, step, set));
         return td;
       };
-      const structural = () => { pricingChanged(); };
+      // Keep the stored family in sync with the vCPU/RAM ratio on edits.
+      const structural = () => { c.family = deriveFamily(c.vcpu, c.ram) || c.family; pricingChanged(); };
       tr.append(
         txt,
         cell(c.vcpu, "1", (v) => { c.vcpu = isFinite(v) ? v : 0; structural(); }),
@@ -711,7 +724,7 @@
   document.getElementById("closeEditor").addEventListener("click", closeEditor);
   document.getElementById("exportData").addEventListener("click", exportDataJs);
   document.getElementById("addInstance").addEventListener("click", () => {
-    COMPUTE.push({ family: "Custom", name: "new.instance", vcpu: 1, ram: 2,
+    COMPUTE.push({ family: deriveFamily(1, 2) || "Custom", name: "new.instance", vcpu: 1, ram: 2,
       linuxClient: 0, linuxCost: 0, winClient: 0, winCost: 0 });
     renderComputeEditor(); pricingChanged();
   });
