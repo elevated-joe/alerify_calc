@@ -98,7 +98,7 @@
       </div>
 
       <div class="compare-only compare-panel">
-        <h3>Comparable stack vs. public cloud <small>(compute + storage + IP + SQL, estimated on-demand list)</small></h3>
+        <h3>Comparable stack vs. public cloud <small>(compute + storage + IP + SQL + egress, estimated on-demand list)</small></h3>
         <div class="summary-grid">
           <div class="summary-metric">
             <span class="metric-label">Alerify (comparable)</span>
@@ -122,8 +122,9 @@
           </div>
         </div>
         <p class="section-hint">
-          Directional only. Cloud figures include Windows &amp; SQL Standard licensing but exclude
-          committed-use discounts, data transfer, paid support, and managed-service value.
+          Directional only. Cloud figures include Windows &amp; SQL Standard licensing and internet
+          egress (ingress is free everywhere; Alerify bundles data transfer at no charge). They
+          exclude committed-use discounts, paid support, and managed-service value.
         </p>
       </div>
     </section>
@@ -176,6 +177,11 @@
         <div class="field">
           <label>Elastic IPs</label>
           <input type="number" class="f-eip" min="0" step="1" value="1" />
+        </div>
+
+        <div class="field">
+          <label title="Estimated internet data-out per month. Alerify includes this at no charge; used only for the cloud comparison.">Data out / mo (GB)</label>
+          <input type="number" class="f-egress" min="0" step="50" value="0" />
         </div>
 
         <div class="field">

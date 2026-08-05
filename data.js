@@ -35,6 +35,7 @@ const COMPARE = {
     storageGB: 0.08,    // EBS gp3, per GB-month
     ipMonth: 3.65,      // public IPv4, $0.005/hr
     sqlPer2Core: 146,   // SQL Standard License Included, per 2-core pack/month
+    egressGB: 0.09,     // internet data-OUT per GB (ingress is free). Alerify: $0
   },
   azure: {
     label: "Azure",
@@ -44,6 +45,7 @@ const COMPARE = {
     storageGB: 0.10,    // managed SSD, per GB-month
     ipMonth: 2.92,      // standard public IP, $0.004/hr
     sqlPer2Core: 146,   // SQL Standard License Included, per 2-core pack/month
+    egressGB: 0.087,    // internet data-OUT per GB (ingress is free). Alerify: $0
   },
 };
 

@@ -79,7 +79,8 @@
         const packs = Math.ceil(Math.max(ADDONS.sqlMinCores, v.vcpu) / 2);
         sql = packs * p.sqlPer2Core;
       }
-      return compute + storage + ip + sql;
+      const egress = v.egress * p.egressGB; // Alerify bundles this at no charge
+      return compute + storage + ip + sql + egress;
     }
     return { aws: calc(COMPARE.aws), azure: calc(COMPARE.azure) };
   }
@@ -121,7 +122,7 @@
   }
   function renderCompare(tbody, priced, cmp) {
     tbody.innerHTML =
-      `<tr><th class="desc">Comparable stack (compute + storage + IP + SQL)</th>` +
+      `<tr><th class="desc">Comparable stack (compute + storage + IP + SQL + egress)</th>` +
         `<th>Alerify</th><th>AWS</th><th>Azure</th></tr>` +
       `<tr><td class="desc">Estimated monthly</td>` +
         `<td class="amt">${fmt(priced.comparable)}</td>` +
@@ -143,6 +144,7 @@
       ram: parseInt(card.querySelector(".f-ram").value, 10),
       ebs: Math.max(0, parseFloat(card.querySelector(".f-ebs").value) || 0),
       eip: Math.max(0, parseInt(card.querySelector(".f-eip").value, 10) || 0),
+      egress: Math.max(0, parseFloat(card.querySelector(".f-egress").value) || 0),
       rds: Math.max(0, parseInt(card.querySelector(".f-rds").value, 10) || 0),
       sql: card.querySelector(".f-sql").checked,
     };
@@ -234,6 +236,7 @@
     fillRam(node, p.ram);
     node.querySelector(".f-ebs").value = p.ebs != null ? p.ebs : 0;
     node.querySelector(".f-eip").value = p.eip != null ? p.eip : 1;
+    node.querySelector(".f-egress").value = p.egress != null ? p.egress : 0;
     node.querySelector(".f-rds").value = p.rds != null ? p.rds : 0;
     node.querySelector(".f-sql").checked = !!p.sql;
 
