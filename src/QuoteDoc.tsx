@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function QuoteDoc({ quote, addons, keyed }: Props) {
-  const customer = quote.quoteName.trim() || "Prepared quote";
+  const customer = quote.quoteName.trim() || "Hosting quote";
   const ref = quote.quoteRef.trim();
   const d = new Date();
   const dateStr = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -29,7 +29,7 @@ export default function QuoteDoc({ quote, addons, keyed }: Props) {
     ]
       .filter(Boolean)
       .join(" · ");
-    return { name: v.name || "Server", specs, price: priced.client };
+    return { key: v.id, name: v.name || "Server", specs, price: priced.client };
   });
 
   const fw = firewallLine(quote.firewall, addons);
@@ -37,92 +37,68 @@ export default function QuoteDoc({ quote, addons, keyed }: Props) {
 
   return (
     <div id="quoteDoc" aria-hidden="true">
-      <div className="q-page">
-        <div className="q-head">
-          <div className="q-brand">
-            <span className="q-logo">A</span>
-            <div>
-              <div className="q-name">Alerify</div>
-              <div className="q-sub">Managed Cloud Hosting</div>
-            </div>
+      <div className="csheet">
+        <header className="c-mast">
+          <div className="c-brandline">
+            <div className="c-wordmark">A<span>LERIFY</span></div>
+            <div className="c-tagline">Your Data. Our Duty.</div>
           </div>
-          <div className="q-meta">
-            <div className="q-title">Hosting Quote</div>
-            <table className="q-metatable">
-              <tbody>
-                <tr>
-                  <td>Quote #</td>
-                  <td>{quoteNo}</td>
-                </tr>
-                <tr>
-                  <td>Date</td>
-                  <td>{dateStr}</td>
-                </tr>
-                {ref && (
-                  <tr>
-                    <td>Reference</td>
-                    <td>{ref}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="q-prepared">
-          Prepared for
-          <br />
-          <strong>{customer}</strong>
-        </div>
-
-        <table className="q-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Configuration</th>
-              <th className="q-amt">Monthly</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td>
-                  <strong>{r.name}</strong>
-                </td>
-                <td className="q-spec">{r.specs}</td>
-                <td className="q-amt">{fmt(r.price)}</td>
-              </tr>
-            ))}
-            <tr>
-              <td>
-                <strong>Shared services</strong>
-              </td>
-              <td className="q-spec">{fw.label}</td>
-              <td className="q-amt">{fmt(fw.client)}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr className="q-subtotal">
-              <td colSpan={2}>Monthly total</td>
-              <td className="q-amt">{fmt(monthly)}</td>
-            </tr>
-            <tr className="q-annual">
-              <td colSpan={2}>Annual total</td>
-              <td className="q-amt">{fmt(monthly * 12)}</td>
-            </tr>
-          </tfoot>
-        </table>
-
-        <div className="q-terms">
-          <p>
-            <strong>Notes</strong>
+          <div className="c-eyebrow">Private Cloud · Hosting Quote · Monthly</div>
+          <h1 className="c-headline">{customer}</h1>
+          <p className="qb-meta">
+            Quote {quoteNo} &nbsp;·&nbsp; {dateStr}
+            {ref ? <> &nbsp;·&nbsp; Ref {ref}</> : null}
           </p>
+        </header>
+
+        <section className="qb-body">
+          <table className="qb-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Configuration</th>
+                <th className="qb-amt">Monthly</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.key}>
+                  <td className="qb-name">{r.name}</td>
+                  <td className="qb-spec">{r.specs}</td>
+                  <td className="qb-amt">{fmt(r.price)}</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="qb-name">Shared services</td>
+                <td className="qb-spec">{fw.label}</td>
+                <td className="qb-amt">{fmt(fw.client)}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr className="qb-subtotal">
+                <td colSpan={2}>Monthly total</td>
+                <td className="qb-amt">{fmt(monthly)}</td>
+              </tr>
+              <tr className="qb-annual">
+                <td colSpan={2}>Annual total</td>
+                <td className="qb-amt">{fmt(monthly * 12)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+
+        <section className="qb-notes">
+          <p className="qb-notes-h">Notes</p>
           <ul>
             <li>All amounts are in USD and billed monthly. Annual total is indicative (12 × monthly).</li>
             <li>Pricing excludes applicable taxes. Storage is billed per GB per month.</li>
             <li>This quote is valid for 30 days from the date above.</li>
           </ul>
-          <p className="q-foot">Alerify — Managed Cloud Hosting &nbsp;·&nbsp; Thank you for your business.</p>
+        </section>
+
+        <div className="c-footer">
+          717-725-7724 <span>|</span> sales@alerify.com <span>|</span> 2330 Vartan Way, Harrisburg PA 17110{" "}
+          <span>|</span> alerify.com
         </div>
       </div>
     </div>
