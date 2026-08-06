@@ -22,6 +22,9 @@ const ADDON_ROWS: { key: keyof Addons; label: string; basis: string }[] = [
   { key: "firewallAdv", label: "Advanced firewall — Small", basis: "flat / mo" },
   { key: "sqlPer2Core", label: "SQL Standard", basis: "per 2-core pack / mo" },
   { key: "rdsCal", label: "RDS CAL", basis: "per CAL / mo" },
+  { key: "localBackupPerGB", label: "Local backup storage", basis: "per backup GB / mo" },
+  { key: "offsiteBackupPerGB", label: "Offsite backup storage", basis: "per backup GB / mo" },
+  { key: "backupLicense", label: "Backup license", basis: "per server / mo" },
 ];
 
 const COMPARE_GLOBAL: { key: "hoursMonth" | "avgEgressGBPerServer"; label: string }[] = [
@@ -261,6 +264,21 @@ export default function Editor({
             })}
           </tbody>
         </table>
+      </div>
+      <div className="bulk-bar">
+        <span className="bulk-label">Backup sizing</span>
+        <input
+          type="number"
+          step={1}
+          className="margin-in"
+          value={Number((addons.backupDailyChangeRate * 100).toFixed(2))}
+          onChange={(e) => onAddons({ ...addons, backupDailyChangeRate: n(e.target.value) / 100 })}
+          aria-label="Backup daily change rate percent"
+        />
+        <span className="bulk-pct">% daily change</span>
+        <span className="bulk-hint">
+          Backup size = EBS × daily change × retention days (set per server; retention defaults to 30 days).
+        </span>
       </div>
 
       <h3 className="editor-h3">

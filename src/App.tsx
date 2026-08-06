@@ -12,11 +12,13 @@ let seq = 0;
 const nextId = () => "s" + ++seq + "_" + Math.floor(performance.now());
 
 function seedServer(): ServerConfig {
-  return { id: nextId(), name: "APP01", os: "windows", vcpu: 4, ram: 16, ebs: 200, eip: 1, rds: 0, sql: false };
+  return { id: nextId(), name: "APP01", os: "windows", vcpu: 4, ram: 16, ebs: 200, eip: 1, rds: 0, sql: false,
+    localBackup: false, offsiteBackup: false, backupRetentionDays: 30 };
 }
 
 function newServer(n: number): ServerConfig {
-  return { id: nextId(), name: "Server " + n, os: "linux", vcpu: 1, ram: 2, ebs: 0, eip: 1, rds: 0, sql: false };
+  return { id: nextId(), name: "Server " + n, os: "linux", vcpu: 1, ram: 2, ebs: 0, eip: 1, rds: 0, sql: false,
+    localBackup: false, offsiteBackup: false, backupRetentionDays: 30 };
 }
 
 type Status = { kind: "ok" | "err" | ""; text: string };

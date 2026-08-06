@@ -28,7 +28,20 @@ export const ADDONS: Addons = {
   "rdsCal": {
     "client": 11.69,
     "cost": 6.68
-  }
+  },
+  "localBackupPerGB": {
+    "client": 0.018,
+    "cost": 0.00557
+  },
+  "offsiteBackupPerGB": {
+    "client": 0.034,
+    "cost": 0.024
+  },
+  "backupLicense": {
+    "client": 14,
+    "cost": 4.2
+  },
+  "backupDailyChangeRate": 0.1
 };
 
 export const COMPARE: Compare = {

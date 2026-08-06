@@ -95,6 +95,20 @@ export function priceServer(v: ServerConfig, addons: Addons, keyed: Map<string, 
       v.rds * addons.rdsCal.client, v.rds * addons.rdsCal.cost, false);
   }
 
+  // Backups. Backup data size = EBS × daily change rate × retention days.
+  if (v.localBackup) {
+    const days = v.backupRetentionDays > 0 ? v.backupRetentionDays : 30;
+    const backupGB = v.ebs * addons.backupDailyChangeRate * days;
+    const changePct = Math.round(addons.backupDailyChangeRate * 100);
+    add("Backup license", "per server", addons.backupLicense.client, addons.backupLicense.cost, false);
+    add("Local backup", `${Math.round(backupGB)} GB · ${days}-day retention @ ${changePct}%/day of ${v.ebs} GB`,
+      backupGB * addons.localBackupPerGB.client, backupGB * addons.localBackupPerGB.cost, false);
+    if (v.offsiteBackup) {
+      add("Offsite backup", `${Math.round(backupGB)} GB replicated`,
+        backupGB * addons.offsiteBackupPerGB.client, backupGB * addons.offsiteBackupPerGB.cost, false);
+    }
+  }
+
   return { lines, client, cost, comparable, profit: client - cost, inst };
 }
 

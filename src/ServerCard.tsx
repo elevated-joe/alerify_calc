@@ -105,6 +105,44 @@ export default function ServerCard({ server, addons, compare, keyed, vcpus, comp
             <span>SQL Standard required</span>
           </label>
         </div>
+
+        <div className="field field-check">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={!!server.localBackup}
+              onChange={(e) =>
+                onChange(e.target.checked ? { localBackup: true } : { localBackup: false, offsiteBackup: false })
+              }
+            />
+            <span>Local backup</span>
+          </label>
+        </div>
+        <div className="field field-check">
+          <label className={"checkbox" + (server.localBackup ? "" : " is-disabled")}>
+            <input
+              type="checkbox"
+              checked={!!server.offsiteBackup}
+              disabled={!server.localBackup}
+              onChange={(e) =>
+                onChange(e.target.checked ? { offsiteBackup: true, localBackup: true } : { offsiteBackup: false })
+              }
+            />
+            <span>Offsite backup{server.localBackup ? "" : " (needs local)"}</span>
+          </label>
+        </div>
+        {server.localBackup && (
+          <div className="field">
+            <label>Backup retention (days)</label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={server.backupRetentionDays ?? 30}
+              onChange={(e) => onChange({ backupRetentionDays: Math.max(1, parseInt(e.target.value, 10) || 30) })}
+            />
+          </div>
+        )}
       </div>
 
       <div className="server-breakdown">

@@ -25,6 +25,12 @@ export interface Addons {
   sqlPer2Core: Rate;
   sqlMinCores: number;
   rdsCal: Rate;
+  // Backups. Storage rates are per GB of backup data per month; the license is
+  // flat per server with local backup. Backup size = EBS × daily change × retention.
+  localBackupPerGB: Rate;
+  offsiteBackupPerGB: Rate;
+  backupLicense: Rate;
+  backupDailyChangeRate: number; // e.g. 0.10 = 10% of EBS changes per day
 }
 
 export interface Provider {
@@ -61,6 +67,9 @@ export interface ServerConfig {
   eip: number;
   rds: number;
   sql: boolean;
+  localBackup: boolean;
+  offsiteBackup: boolean; // requires localBackup
+  backupRetentionDays: number;
 }
 
 export interface Quote {

@@ -26,6 +26,7 @@ export default function QuoteDoc({ quote, addons, keyed }: Props) {
       v.eip > 0 ? `${v.eip} × Elastic IP` : null,
       v.sql ? "SQL Standard" : null,
       v.rds > 0 ? `${v.rds} × RDS CAL` : null,
+      v.localBackup ? (v.offsiteBackup ? "Local + offsite backup" : "Local backup") : null,
     ]
       .filter(Boolean)
       .join(" · ");

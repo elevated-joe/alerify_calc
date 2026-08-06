@@ -119,6 +119,8 @@ input:focus, select:focus {
 .field-check { justify-content: flex-end; }
 .checkbox { display: flex; flex-direction: row; align-items: center; gap: 9px; cursor: pointer; text-transform: none; letter-spacing: normal; font-size: 14px; color: var(--ink); font-weight: 500; }
 .checkbox input { width: 17px; height: 17px; accent-color: var(--accent); }
+.checkbox.is-disabled { color: var(--ink-soft); cursor: default; }
+.checkbox.is-disabled input { cursor: default; }
 
 /* ---------- Breakdown ---------- */
 .server-breakdown { margin-top: 16px; }
