@@ -382,14 +382,19 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .c-footer span { opacity: .72; padding: 0 7px; }
 
 /* ---------- Print ---------- */
+/* Zero page margin => the browser drops its own date/title header and URL/page footer. */
+@page { size: A4; margin: 0; }
 @media print {
-  body { background: #fff; }
+  html, body { margin: 0; background: #fff; }
   .topbar, main, .editor { display: none !important; }
   /* Default print = client quote; comparison print = branded sheet. */
   #quoteDoc { display: block !important; }
   #compareDoc { display: none !important; }
   body.print-compare #quoteDoc { display: none !important; }
   body.print-compare #compareDoc { display: block !important; }
+  /* Fill the page and pin the cyan footer to the bottom. */
+  .csheet { max-width: none; min-height: 100vh; display: flex; flex-direction: column; }
+  .c-footer { margin-top: auto; }
   .csheet, .csheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .c-row, .c-band, .c-included tr, .qb-table tbody tr { break-inside: avoid; }
 }
