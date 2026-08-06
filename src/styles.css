@@ -194,11 +194,20 @@ body.editing main { display: none; }
   padding: 9px 12px; border-bottom: 2px solid var(--line); white-space: nowrap;
 }
 .edit-table th.num, .edit-table td.num { text-align: right; }
-.edit-table td { padding: 6px 10px; border-bottom: 1px solid #eef1f7; vertical-align: middle; }
+.edit-table th { padding: 8px 6px; }
+.edit-table td { padding: 4px 6px; border-bottom: 1px solid #eef1f7; vertical-align: middle; }
 .edit-table td.muted { color: var(--ink-soft); }
-.edit-table input[type="text"] { min-width: 200px; }
-.edit-table input[type="number"] { width: 108px; text-align: right; }
-.edit-table input.margin-in { width: 74px; background: #f4f7ff; color: var(--accent-dark); font-weight: 600; }
+.edit-table input { padding: 6px 8px; font-size: 13px; }
+.edit-table input[type="text"] { min-width: 0; width: 100%; }
+.edit-table input[type="number"] { width: 82px; text-align: right; }
+.edit-table input.margin-in { width: 56px; background: #f4f7ff; color: var(--accent-dark); font-weight: 600; }
+/* Hide number spinners in the editor so columns stay narrow. */
+.edit-table input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.edit-table input[type="number"]::-webkit-outer-spin-button,
+.edit-table input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+/* Let the Name column flex and take the slack; keep numeric columns tight. */
+.edit-table td:first-child, .edit-table th:first-child { width: 100%; min-width: 120px; }
+.edit-table td.num, .edit-table th.num { width: 1%; white-space: nowrap; }
 
 .bulk-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 12px; background: #fafbff; border: 1px solid var(--line); border-radius: 11px; }
 .bulk-bar .bulk-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ink-soft); }
