@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import type { Addons, Compare, Instance, Pricing, Provider } from "./types";
 import { deriveFamily, marginPct, priceFromMargin } from "./pricing";
 
@@ -45,14 +45,23 @@ function n(v: string): number {
 }
 
 // Shows the margin (from cost vs price); typing a new margin sets the price.
+// While focused it holds the raw typed text so it doesn't snap back mid-edit;
+// when blurred it shows the computed margin from the current cost/price.
 function MarginInput({ cost, client, onPrice }: { cost: number; client: number; onPrice: (price: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const computed = String(Number(marginPct(cost, client).toFixed(1)));
   return (
     <input
       type="number"
       step={0.5}
       className="margin-in"
-      value={Number(marginPct(cost, client).toFixed(1))}
-      onChange={(e) => onPrice(priceFromMargin(cost, n(e.target.value)))}
+      value={draft ?? computed}
+      onFocus={() => setDraft(computed)}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        if (e.target.value.trim() !== "" && cost > 0) onPrice(priceFromMargin(cost, n(e.target.value)));
+      }}
+      onBlur={() => setDraft(null)}
       title="Editable — sets the price from cost and this margin"
     />
   );
