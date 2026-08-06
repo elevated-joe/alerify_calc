@@ -127,6 +127,8 @@ export default function Editor({
   onClose,
 }: Props) {
   const { addons, compare, compute } = pricing;
+  const [bulkMargin, setBulkMargin] = useState("70");
+  const [bulkTarget, setBulkTarget] = useState<"both" | "linux" | "windows">("both");
 
   function setAddon(key: keyof Addons, field: "client" | "cost", value: number) {
     const next = { ...addons, [key]: { ...(addons[key] as { client: number; cost: number }), [field]: value } };
@@ -153,6 +155,21 @@ export default function Editor({
 
   function removeInstance(idx: number) {
     onCompute(compute.filter((_, i) => i !== idx));
+  }
+
+  function applyBulkMargin(margin: number, target: "both" | "linux" | "windows") {
+    if (!isFinite(margin)) return;
+    const doLinux = target === "both" || target === "linux";
+    const doWin = target === "both" || target === "windows";
+    const label = target === "both" ? "Linux and Windows" : target === "linux" ? "Linux" : "Windows";
+    if (!confirm(`Set ${label} prices on all ${compute.length} instances to a ${margin}% margin? This overwrites their current prices.`)) return;
+    onCompute(
+      compute.map((c) => ({
+        ...c,
+        linuxClient: doLinux ? priceFromMargin(c.linuxCost, margin) : c.linuxClient,
+        winClient: doWin ? priceFromMargin(c.winCost, margin) : c.winClient,
+      }))
+    );
   }
 
   function addInstance() {
@@ -281,6 +298,27 @@ export default function Editor({
       <h3 className="editor-h3">
         Compute catalog <small>({compute.length} vCPU/RAM instances)</small>
       </h3>
+      <div className="bulk-bar">
+        <span className="bulk-label">Bulk margin</span>
+        <input
+          type="number"
+          step={0.5}
+          className="margin-in"
+          value={bulkMargin}
+          onChange={(e) => setBulkMargin(e.target.value)}
+          aria-label="Bulk margin percent"
+        />
+        <span className="bulk-pct">%</span>
+        <select value={bulkTarget} onChange={(e) => setBulkTarget(e.target.value as typeof bulkTarget)}>
+          <option value="both">Linux &amp; Windows</option>
+          <option value="linux">Linux only</option>
+          <option value="windows">Windows only</option>
+        </select>
+        <button className="btn btn-ghost" onClick={() => applyBulkMargin(parseFloat(bulkMargin), bulkTarget)}>
+          Apply to all {compute.length}
+        </button>
+        <span className="bulk-hint">Sets each instance's price from its cost.</span>
+      </div>
       <div className="edit-scroll tall">
         <table className="edit-table">
           <thead>

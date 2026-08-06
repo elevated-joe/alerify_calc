@@ -199,6 +199,14 @@ body.editing main { display: none; }
 .edit-table input[type="text"] { min-width: 200px; }
 .edit-table input[type="number"] { width: 108px; text-align: right; }
 .edit-table input.margin-in { width: 74px; background: #f4f7ff; color: var(--accent-dark); font-weight: 600; }
+
+.bulk-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 12px; background: #fafbff; border: 1px solid var(--line); border-radius: 11px; }
+.bulk-bar .bulk-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ink-soft); }
+.bulk-bar input.margin-in { width: 78px; }
+.bulk-bar .bulk-pct { color: var(--ink-soft); margin-left: -4px; }
+.bulk-bar select { width: auto; }
+.bulk-bar .bulk-hint { font-size: 12px; color: var(--ink-soft); margin-left: 2px; }
+@media (max-width: 560px) { .bulk-bar .bulk-hint { flex-basis: 100%; } }
 .edit-table .btn-icon { width: 28px; height: 28px; }
 
 .cmp-provider { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--card); }
