@@ -79,8 +79,8 @@ export default function CompareSheet({ quote, addons, compare, keyed }: Props) {
             Your servers, next to <em>AWS &amp; Azure</em>.
           </h1>
           <p className="c-standfirst">
-            Like-for-like monthly pricing — compute, SSD storage, and a public IP — with 30-day backup, unmetered
-            egress, and 24×7 human support already in the number. {quote.quoteName.trim() ? `Prepared for ${quote.quoteName.trim()}.` : ""}
+            Like-for-like monthly pricing — compute, SSD storage, and a public IP — with unmetered egress and 24×7
+            human support already in the number. {quote.quoteName.trim() ? `Prepared for ${quote.quoteName.trim()}.` : ""}
           </p>
         </header>
 
@@ -122,22 +122,10 @@ export default function CompareSheet({ quote, addons, compare, keyed }: Props) {
                 <td className="c-p">Per GB</td>
               </tr>
               <tr>
-                <td className="c-lead">30-day backup<i>Daily, with 30 days of retention</i></td>
-                <td className="c-p c-yes">One line item</td>
-                <td className="c-p">Metered separately</td>
-                <td className="c-p">Metered + instance fee</td>
-              </tr>
-              <tr>
-                <td className="c-lead">Support<i>7×24 helpdesk, 30-minute P1 response</i></td>
-                <td className="c-p c-yes">Included</td>
-                <td className="c-p">Paid plan</td>
-                <td className="c-p">Paid plan</td>
-              </tr>
-              <tr>
-                <td className="c-lead">Remote hands<i>Hardware swaps, diagnostics, on site</i></td>
-                <td className="c-p c-yes">No charge, business hours</td>
-                <td className="c-p">Not offered</td>
-                <td className="c-p">Not offered</td>
+                <td className="c-lead">Support &amp; remote hands<i>7×24 helpdesk, 30-min P1; on-site hardware swaps</i></td>
+                <td className="c-p c-yes">Included, no charge</td>
+                <td className="c-p">Paid plan · none</td>
+                <td className="c-p">Paid plan · none</td>
               </tr>
               <tr>
                 <td className="c-lead">Public IPv4<i>First address with every tenant</i></td>
@@ -164,12 +152,11 @@ export default function CompareSheet({ quote, addons, compare, keyed }: Props) {
 
         <p className="c-footnote">
           <strong>How these numbers were built.</strong> Alerify figures are current list price for the configuration
-          shown (compute, SSD storage, one public IPv4; 30-day backup, egress and support included). AWS and Azure
-          figures are estimated US-East list pricing on a comparable stack — compute, SSD storage, a public IP, Windows
-          and SQL licensing where applicable, and monthly egress. Savings are quoted against whichever hyperscaler is
-          cheaper for that configuration. Hyperscaler pricing changes frequently and varies by region and commitment —
-          treat these as indicative and ask us for a written quote. <strong>Priced {dateStr}.</strong> Not an offer or a
-          quote.
+          shown (compute, SSD storage, one public IPv4; egress and support included). AWS and Azure figures are
+          estimated US-East list pricing on a comparable stack — compute, SSD storage, a public IP, Windows and SQL
+          licensing where applicable, and monthly egress. Savings are quoted against whichever hyperscaler is cheaper
+          for that configuration. Hyperscaler pricing changes frequently and varies by region and commitment — treat
+          these as indicative and ask us for a written quote. <strong>Priced {dateStr}.</strong> Not an offer or a quote.
         </p>
 
         <div className="c-footer">
