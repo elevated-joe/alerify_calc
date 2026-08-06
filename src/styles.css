@@ -205,9 +205,12 @@ body.editing main { display: none; }
 .edit-table input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .edit-table input[type="number"]::-webkit-outer-spin-button,
 .edit-table input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-/* Let the Name column flex and take the slack; keep numeric columns tight. */
-.edit-table td:first-child, .edit-table th:first-child { width: 100%; min-width: 120px; }
-.edit-table td.num, .edit-table th.num { width: 1%; white-space: nowrap; }
+.edit-table td.num, .edit-table th.num { white-space: nowrap; }
+/* Compute catalog only: let the Name column flex and keep numeric columns tight. */
+.edit-compute td:first-child, .edit-compute th:first-child { width: 100%; min-width: 120px; }
+.edit-compute td.num, .edit-compute th.num { width: 1%; }
+/* Add-ons: keep the Basis label on one line. */
+.edit-table td:nth-child(2) { white-space: nowrap; }
 
 .bulk-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 12px; background: #fafbff; border: 1px solid var(--line); border-radius: 11px; }
 .bulk-bar .bulk-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ink-soft); }

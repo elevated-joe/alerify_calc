@@ -320,7 +320,7 @@ export default function Editor({
         <span className="bulk-hint">Sets each instance's price from its cost.</span>
       </div>
       <div className="edit-scroll tall">
-        <table className="edit-table">
+        <table className="edit-table edit-compute">
           <thead>
             <tr>
               <th>Name</th>
