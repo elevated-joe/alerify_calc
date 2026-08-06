@@ -21,8 +21,16 @@ applied once to the whole quote rather than per server.
 Features: live per-server breakdown, monthly + annual totals, an **Internal
 view** toggle (cost / profit / margin), a **Cloud comparison** toggle
 (estimated AWS/Azure for the comparable stack), a professional client-facing
-**PDF quote** (Export quote → print), and an inline **pricing editor**. State is
+**PDF quote** (Export quote → print), a branded **Alerify vs AWS/Azure
+comparison one-sheet** (Export comparison → print, or download it as a
+standalone self-contained HTML file), and an inline **pricing editor**. State is
 auto-saved in the browser (localStorage).
+
+The comparison one-sheet uses the calculator's own numbers: per-server and
+total Alerify-vs-AWS/Azure cost bars (green when Alerify is lower, neutral when
+higher) plus a benefits table (unmetered egress, 30-day backup, 24×7 support,
+remote hands, included IPv4). Its brand styles live under the `.csheet` /
+`.c-*` classes in `styles.css`; the layout is `src/CompareSheet.tsx`.
 
 ## Editing pricing
 
