@@ -277,7 +277,7 @@ export default function Editor({
         />
         <span className="bulk-pct">% daily change</span>
         <span className="bulk-hint">
-          Backup size = EBS × daily change × retention days (set per server; retention defaults to 30 days).
+          Backup size = EBS × (1 + daily change × retention days) — full base + increments (retention per server, default 30 days).
         </span>
       </div>
 
