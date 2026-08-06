@@ -48,7 +48,7 @@ body {
 }
 .topbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .2px; }
 .tagline { margin: 2px 0 0; font-size: 13px; opacity: .8; }
-.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
 /* ---------- Toggle switch ---------- */
 .switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: 14px; user-select: none; }
@@ -286,6 +286,26 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
   .server-grid { grid-template-columns: repeat(2, 1fr); }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .quote-meta { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  main { margin-top: 16px; padding: 0 14px; }
+  .card { padding: 16px; }
+  /* Header stacks; actions wrap and share the row. */
+  .topbar { padding: 14px 16px; gap: 12px; }
+  .topbar h1 { font-size: 18px; }
+  .topbar-actions { width: 100%; gap: 10px; }
+  .topbar-actions .btn { flex: 1 1 auto; text-align: center; padding: 10px 12px; }
+  .switch { flex: 1 1 100%; }
+  /* 16px inputs prevent iOS from zooming in on focus. */
+  input[type="text"], input[type="number"], select { font-size: 16px; }
+  .server-head { flex-wrap: wrap; }
+  .server-name { max-width: none; flex: 1 1 100%; }
+  .metric-value { font-size: 20px; }
+  .shared-grid { grid-template-columns: 1fr; }
+  .editor { padding: 0 14px; }
+  .editor-head { gap: 10px; }
+  .editor-actions { width: 100%; }
+  .editor-actions .btn { flex: 1 1 auto; text-align: center; }
 }
 @media (max-width: 460px) {
   .server-grid { grid-template-columns: 1fr; }
