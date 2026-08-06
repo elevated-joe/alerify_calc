@@ -60,45 +60,6 @@ export default function App() {
     window.print();
   }
 
-  // Standalone, self-contained branded sheet (styles inlined) — share/print anywhere.
-  function downloadSheetHtml() {
-    const doc = document.getElementById("compareDoc");
-    if (!doc) return;
-    let css = "#compareDoc{display:block!important}\n";
-    for (const sheet of Array.from(document.styleSheets)) {
-      let rules: CSSRuleList;
-      try {
-        rules = sheet.cssRules;
-      } catch {
-        continue;
-      }
-      for (const r of Array.from(rules)) {
-        const sel = (r as CSSStyleRule).selectorText;
-        if (sel && (sel.includes(".csheet") || sel.includes(".c-") || sel.includes("#compareDoc"))) {
-          css += r.cssText + "\n";
-        }
-      }
-    }
-    const html =
-      `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
-      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
-      `<title>Alerify — Cost comparison</title><style>` +
-      `body{margin:0;background:#eef3f8;padding:20px 12px;` +
-      `font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif}` +
-      `@media print{body{background:#fff;padding:0}}` +
-      css +
-      `</style></head><body>${doc.outerHTML}</body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "alerify-comparison.html";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
   const keyed = useMemo(() => byKey(pricing.compute), [pricing.compute]);
   const vcpus = useMemo(() => vcpuOptions(pricing.compute), [pricing.compute]);
   const isDefault = useMemo(() => isDefaultPricing(pricing), [pricing]);
@@ -202,7 +163,6 @@ export default function App() {
           </label>
           <button className="btn btn-ghost" onClick={() => setEditing(true)}>Edit pricing</button>
           <button className="btn btn-ghost" onClick={printComparison}>Export comparison (PDF)</button>
-          <button className="btn btn-ghost" onClick={downloadSheetHtml} title="Download the comparison as a standalone HTML file">Sheet (HTML)</button>
           <button className="btn btn-ghost" onClick={printQuote}>Export quote (PDF)</button>
         </div>
       </header>
