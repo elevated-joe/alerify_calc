@@ -25,10 +25,12 @@ const SLA: [string, string, string, string, string][] = [
   ["P4", "Cosmetic / inquiries", "2 days", "Next maintenance", "Business hours"],
 ];
 
+const LOGO = import.meta.env.BASE_URL + "alerify-logo.jpg";
+
 function BrandBar({ customer }: { customer: string }) {
   return (
     <div className="pr-bar">
-      <div className="pr-bar-mark">A<span>LERIFY</span></div>
+      <img className="pr-logo-sm" src={LOGO} alt="Alerify" />
       <div className="pr-bar-title">Virtual Private Cloud Proposal · {customer}</div>
     </div>
   );
@@ -73,15 +75,15 @@ export default function ProposalSheet({ quote, addons, keyed }: Props) {
 
   return (
     <div id="proposalDoc" aria-hidden="true">
-      {/* ---------- Cover ---------- */}
+      {/* ---------- Cover (light / low-ink for printing) ---------- */}
       <section className="csheet proposal-page pr-cover">
         <div className="pr-cover-top">
-          <div className="c-wordmark">A<span>LERIFY</span></div>
-          <div className="c-tagline">Your Data. Our Duty.</div>
+          <img className="pr-logo-lg" src={LOGO} alt="Alerify" />
+          <span className="pr-cover-rule" />
         </div>
         <div className="pr-cover-hero">
           <div className="pr-cover-eyebrow">Private Cloud · Hosting Proposal</div>
-          <h1 className="pr-cover-title">Virtual Private<br />Cloud Proposal</h1>
+          <h1 className="pr-cover-title">Virtual Private Cloud Proposal</h1>
           <p className="pr-cover-lead">
             Enterprise-grade private cloud hosting from a Tier 3, SOC&nbsp;2-certified data center in Harrisburg, PA —
             with 24×7 human support and no data-transfer fees.
