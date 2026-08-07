@@ -46,20 +46,17 @@ export default function App() {
     document.body.classList.toggle("editing", editing);
   }, [showInternal, showCompare, editing]);
 
-  // Clear the comparison print mode after printing so normal print = the quote.
-  useEffect(() => {
-    const clear = () => document.body.classList.remove("print-compare");
-    window.addEventListener("afterprint", clear);
-    return () => window.removeEventListener("afterprint", clear);
-  }, []);
-
+  // Each export sets its print mode synchronously before printing and leaves it
+  // set. We deliberately do NOT clear it on `afterprint`: on mobile that event
+  // fires before the PDF renders, which would fall back to the quote.
   function printQuote() {
     document.body.classList.remove("print-compare");
-    window.print();
+    // Let the class change flush before the browser snapshots the page.
+    requestAnimationFrame(() => window.print());
   }
   function printComparison() {
     document.body.classList.add("print-compare");
-    window.print();
+    requestAnimationFrame(() => window.print());
   }
 
   const keyed = useMemo(() => byKey(pricing.compute), [pricing.compute]);
