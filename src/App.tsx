@@ -7,6 +7,7 @@ import Editor from "./Editor";
 import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
+import { downloadSheetPdf } from "./exportPdf";
 
 let seq = 0;
 const nextId = () => "s" + ++seq + "_" + Math.floor(performance.now());
@@ -46,17 +47,36 @@ export default function App() {
     document.body.classList.toggle("editing", editing);
   }, [showInternal, showCompare, editing]);
 
-  // Each export sets its print mode synchronously before printing and leaves it
-  // set. We deliberately do NOT clear it on `afterprint`: on mobile that event
-  // fires before the PDF renders, which would fall back to the quote.
-  function printQuote() {
-    document.body.classList.remove("print-compare");
-    // Let the class change flush before the browser snapshots the page.
-    requestAnimationFrame(() => window.print());
+  // Exports build a downloadable PDF client-side (see exportPdf.ts) rather than
+  // going through window.print(), which iOS/Brave render inconsistently.
+  const [exporting, setExporting] = useState<"" | "quote" | "compare">("");
+  const dateSlug = () => {
+    const d = new Date();
+    return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+  };
+  const slug = (s: string) => s.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  async function exportQuote() {
+    if (exporting) return;
+    setExporting("quote");
+    try {
+      const name = slug(quote.quoteName) || "Quote";
+      await downloadSheetPdf("quoteDoc", `Alerify-${name}-${dateSlug()}.pdf`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not build the PDF.");
+    } finally {
+      setExporting("");
+    }
   }
-  function printComparison() {
-    document.body.classList.add("print-compare");
-    requestAnimationFrame(() => window.print());
+  async function exportComparison() {
+    if (exporting) return;
+    setExporting("compare");
+    try {
+      await downloadSheetPdf("compareDoc", `Alerify-vs-AWS-Azure-${dateSlug()}.pdf`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not build the PDF.");
+    } finally {
+      setExporting("");
+    }
   }
 
   const keyed = useMemo(() => byKey(pricing.compute), [pricing.compute]);
@@ -162,8 +182,12 @@ export default function App() {
             <span className="switch-label">Cloud comparison</span>
           </label>
           <button className="btn btn-ghost" onClick={() => setEditing(true)}>Edit pricing</button>
-          <button className="btn btn-ghost" onClick={printComparison}>Export comparison (PDF)</button>
-          <button className="btn btn-ghost" onClick={printQuote}>Export quote (PDF)</button>
+          <button className="btn btn-ghost" onClick={exportComparison} disabled={!!exporting}>
+            {exporting === "compare" ? "Building…" : "Export comparison (PDF)"}
+          </button>
+          <button className="btn btn-ghost" onClick={exportQuote} disabled={!!exporting}>
+            {exporting === "quote" ? "Building…" : "Export quote (PDF)"}
+          </button>
         </div>
       </header>
 
