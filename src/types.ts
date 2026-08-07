@@ -77,4 +77,7 @@ export interface Quote {
   quoteRef: string;
   firewall: FirewallTier;
   servers: ServerConfig[];
+  // One-time installation & setup charges shown on the proposal.
+  setupClient: number; // "Client setup" line (default 0)
+  setupAdmin: number; // "Admin setup fee" line (default 185)
 }

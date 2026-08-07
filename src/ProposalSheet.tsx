@@ -47,6 +47,8 @@ function Footer() {
 
 export default function ProposalSheet({ quote, addons, keyed }: Props) {
   const customer = quote.quoteName.trim() || "Client";
+  const setupClient = quote.setupClient ?? 0;
+  const setupAdmin = quote.setupAdmin ?? 185;
   const d = new Date();
   const dateStr = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const quoteNo =
@@ -171,18 +173,18 @@ export default function ProposalSheet({ quote, addons, keyed }: Props) {
                 <tr>
                   <td className="pr-name">Client setup</td>
                   <td className="pr-spec">VM, networking &amp; configuration are {customer} responsibilities</td>
-                  <td className="pr-amt">{fmt(0)}</td>
+                  <td className="pr-amt">{fmt(setupClient)}</td>
                 </tr>
                 <tr>
                   <td className="pr-name">Admin setup fee</td>
-                  <td className="pr-spec">Per new client — 1 hour @ $185.00/hour</td>
-                  <td className="pr-amt">{fmt(185)}</td>
+                  <td className="pr-spec">Per new client — one-time provisioning</td>
+                  <td className="pr-amt">{fmt(setupAdmin)}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr className="pr-total">
                   <td colSpan={2}>One-time charge</td>
-                  <td className="pr-amt">{fmt(185)}</td>
+                  <td className="pr-amt">{fmt(setupClient + setupAdmin)}</td>
                 </tr>
               </tfoot>
             </table>

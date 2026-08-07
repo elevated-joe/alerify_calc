@@ -30,8 +30,9 @@ export default function App() {
   const [pricing, setPricing] = useState<Pricing>(() => loadPricing());
   const [quote, setQuote] = useState<Quote>(() => {
     const q = loadQuote();
-    if (q && q.servers?.length) return q;
-    return { quoteName: "", quoteRef: "", firewall: "standard", servers: [seedServer()] };
+    // Backfill one-time-charge defaults for quotes saved before these fields existed.
+    if (q && q.servers?.length) return { ...q, setupClient: q.setupClient ?? 0, setupAdmin: q.setupAdmin ?? 185 };
+    return { quoteName: "", quoteRef: "", firewall: "standard", servers: [seedServer()], setupClient: 0, setupAdmin: 185 };
   });
   const [showInternal, setShowInternal] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
@@ -219,6 +220,16 @@ export default function App() {
             <label htmlFor="quoteRef">Reference #</label>
             <input id="quoteRef" type="text" placeholder="optional"
               value={quote.quoteRef} onChange={(e) => setQuote((q) => ({ ...q, quoteRef: e.target.value }))} />
+          </div>
+          <div className="field">
+            <label htmlFor="setupClient">Client setup ($, one-time)</label>
+            <input id="setupClient" type="number" min={0} step={5} value={quote.setupClient}
+              onChange={(e) => setQuote((q) => ({ ...q, setupClient: Math.max(0, parseFloat(e.target.value) || 0) }))} />
+          </div>
+          <div className="field">
+            <label htmlFor="setupAdmin">Admin setup fee ($, one-time)</label>
+            <input id="setupAdmin" type="number" min={0} step={5} value={quote.setupAdmin}
+              onChange={(e) => setQuote((q) => ({ ...q, setupAdmin: Math.max(0, parseFloat(e.target.value) || 0) }))} />
           </div>
         </section>
 
