@@ -48,6 +48,26 @@ async function renderPageImage(
   }
 }
 
+// JPEG bytes + pixel size for each `.proposal-page`, for embedding elsewhere (Word).
+export async function renderProposalPageImages(
+  sourceId: string
+): Promise<{ bytes: Uint8Array; w: number; h: number }[]> {
+  const source = document.getElementById(sourceId);
+  const pages = source ? Array.from(source.querySelectorAll<HTMLElement>(".proposal-page")) : [];
+  if (!pages.length) throw new Error("Nothing to export yet.");
+  const { html2canvas } = await libs();
+  const out: { bytes: Uint8Array; w: number; h: number }[] = [];
+  for (const page of pages) {
+    const { img } = await renderPageImage(html2canvas, page);
+    const base64 = img.slice(img.indexOf(",") + 1);
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    out.push({ bytes, w: PAGE_W, h: PAGE_H });
+  }
+  return out;
+}
+
 /**
  * Render every `.proposal-page` inside `sourceId` as its own Letter PDF page.
  * Clean page boundaries (one element = one page) for a multi-page document.

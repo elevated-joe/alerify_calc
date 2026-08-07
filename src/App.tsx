@@ -8,7 +8,7 @@ import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
-import { downloadQuoteDocx } from "./exportDocx";
+import { downloadProposalDocx } from "./exportDocx";
 import ProposalSheet from "./ProposalSheet";
 
 let seq = 0;
@@ -62,7 +62,7 @@ export default function App() {
     setExporting("quote");
     try {
       const name = slug(quote.quoteName) || "Quote";
-      await downloadQuoteDocx(quote, pricing.addons, keyed, `Alerify-Proposal-${name}-${dateSlug()}.docx`);
+      await downloadProposalDocx("proposalDoc", `Alerify-Proposal-${name}-${dateSlug()}.docx`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
