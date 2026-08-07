@@ -8,6 +8,7 @@ import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
+import { downloadProposalDocx } from "./exportDocx";
 import { downloadProposalNativeDocx } from "./exportDocxNative";
 import ProposalSheet from "./ProposalSheet";
 
@@ -51,19 +52,32 @@ export default function App() {
 
   // Exports build a downloadable PDF client-side (see exportPdf.ts) rather than
   // going through window.print(), which iOS/Brave render inconsistently.
-  const [exporting, setExporting] = useState<"" | "quote" | "styled" | "compare">("");
+  const [exporting, setExporting] = useState<"" | "wordimg" | "wordedit" | "styled" | "compare">("");
   const dateSlug = () => {
     const d = new Date();
     return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
   };
   const slug = (s: string) => s.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 40);
-  async function exportQuote() {
+  const qname = () => slug(quote.quoteName) || "Quote";
+  // Word · styled: pixel-perfect brand design (page images, not text-editable).
+  async function exportWordStyled() {
     if (exporting) return;
-    setExporting("quote");
+    setExporting("wordimg");
     try {
-      const name = slug(quote.quoteName) || "Quote";
+      await downloadProposalDocx("proposalDoc", `Alerify-Proposal-${qname()}-${dateSlug()}.docx`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not build the proposal.");
+    } finally {
+      setExporting("");
+    }
+  }
+  // Word · editable: native docx (real text/tables), plainer but fully editable.
+  async function exportWordEditable() {
+    if (exporting) return;
+    setExporting("wordedit");
+    try {
       const logoUrl = import.meta.env.BASE_URL + "alerify-logo.png";
-      await downloadProposalNativeDocx(quote, pricing.addons, keyed, logoUrl, `Alerify-Proposal-${name}-${dateSlug()}.docx`);
+      await downloadProposalNativeDocx(quote, pricing.addons, keyed, logoUrl, `Alerify-Proposal-${qname()}-editable-${dateSlug()}.docx`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
@@ -74,8 +88,7 @@ export default function App() {
     if (exporting) return;
     setExporting("styled");
     try {
-      const name = slug(quote.quoteName) || "Quote";
-      await downloadProposalPdf("proposalDoc", `Alerify-Proposal-${name}-${dateSlug()}.pdf`);
+      await downloadProposalPdf("proposalDoc", `Alerify-Proposal-${qname()}-${dateSlug()}.pdf`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
@@ -200,11 +213,14 @@ export default function App() {
           <button className="btn btn-ghost" onClick={exportComparison} disabled={!!exporting}>
             {exporting === "compare" ? "Building…" : "Export comparison (PDF)"}
           </button>
-          <button className="btn btn-ghost" onClick={exportQuote} disabled={!!exporting}>
-            {exporting === "quote" ? "Building…" : "Export proposal (Word)"}
+          <button className="btn btn-ghost" onClick={exportWordStyled} disabled={!!exporting}>
+            {exporting === "wordimg" ? "Building…" : "Proposal (Word · styled)"}
+          </button>
+          <button className="btn btn-ghost" onClick={exportWordEditable} disabled={!!exporting}>
+            {exporting === "wordedit" ? "Building…" : "Proposal (Word · editable)"}
           </button>
           <button className="btn btn-ghost" onClick={exportProposalStyled} disabled={!!exporting}>
-            {exporting === "styled" ? "Building…" : "Export proposal (styled PDF)"}
+            {exporting === "styled" ? "Building…" : "Proposal (styled PDF)"}
           </button>
         </div>
       </header>
