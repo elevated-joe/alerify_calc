@@ -146,10 +146,11 @@ export default function App() {
     <>
       <header className="topbar">
         <div className="brand">
-          <span className="logo">A</span>
-          <div>
-            <h1>Alerify Cloud Pricing Calculator</h1>
-            <p className="tagline">Build a per-server monthly quote</p>
+          <div className="wordmark">A<span>LERIFY</span></div>
+          <div className="brand-divider" />
+          <div className="brand-text">
+            <h1>Cloud Pricing Calculator</h1>
+            <p className="brand-tag">Your Data. Our Duty.</p>
           </div>
         </div>
         <div className="topbar-actions">

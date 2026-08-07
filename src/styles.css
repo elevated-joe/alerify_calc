@@ -1,18 +1,21 @@
 :root {
-  --bg: #f4f6fb;
+  /* Alerify brand palette (matches the one-sheet). */
+  --bg: #eef3f8;          /* mist */
   --card: #ffffff;
-  --ink: #1c2536;
-  --ink-soft: #5a6478;
-  --line: #e2e7f0;
-  --accent: #2f6bff;
-  --accent-dark: #1f4fd6;
-  --accent-soft: #eaf0ff;
-  --good: #12905a;
+  --ink: #0d1b3e;         /* deep navy */
+  --ink-soft: #5a6b85;    /* slate */
+  --line: #d8e2ec;        /* rule */
+  --accent: #00aeef;      /* cyan — fills, borders, switch */
+  --accent-dark: #0a7ea8; /* deep cyan — accent text & primary buttons (legible on white) */
+  --accent-soft: #e1f4fc; /* cyan tint — focus rings */
+  --green: #6dc24b;       /* brand green — on-dark accents, switches */
+  --good: #3f8f22;        /* readable green for text on white */
   --warn: #c46a00;
   --danger: #d1435b;
-  --shadow: 0 1px 2px rgba(20, 33, 61, 0.06), 0 8px 24px rgba(20, 33, 61, 0.06);
+  --magenta: #ec008c;
+  --shadow: 0 1px 2px rgba(13, 27, 62, 0.06), 0 8px 24px rgba(13, 27, 62, 0.08);
   --radius: 14px;
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -24,30 +27,26 @@ body {
   line-height: 1.45;
 }
 
-/* ---------- Top bar ---------- */
+/* ---------- Top bar (branded masthead) ---------- */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 28px;
-  background: linear-gradient(120deg, #16213e 0%, #24346b 60%, #2f6bff 130%);
+  gap: 16px 24px;
+  padding: 16px 28px;
   color: #fff;
   flex-wrap: wrap;
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(0,174,239,.28) 1.4px, transparent 1.5px) 0 0/14px 14px,
+    linear-gradient(115deg, #0d1b3e 0%, #16295c 62%, #0a1636 100%);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.brand { display: flex; align-items: center; gap: 14px; }
-.logo {
-  display: grid;
-  place-items: center;
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.25);
-  font-weight: 800;
-  font-size: 22px;
-}
-.topbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .2px; }
-.tagline { margin: 2px 0 0; font-size: 13px; opacity: .8; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.wordmark { font-size: 26px; font-weight: 800; letter-spacing: .28em; line-height: 1; color: #fff; }
+.wordmark span { color: var(--accent); }
+.brand-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.2); }
+.brand-text h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: .2px; }
+.brand-tag { margin: 3px 0 0; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
 .topbar-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
 /* ---------- Toggle switch ---------- */
@@ -61,7 +60,7 @@ body {
   position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
   border-radius: 50%; background: #fff; transition: transform .18s;
 }
-.switch input:checked + .switch-track { background: #45d483; }
+.switch input:checked + .switch-track { background: var(--green); }
 .switch input:checked + .switch-track .switch-thumb { transform: translateX(18px); }
 
 /* ---------- Layout ---------- */
@@ -139,8 +138,8 @@ input:focus, select:focus {
   font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s, box-shadow .15s, transform .05s;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary { background: var(--accent-dark); color: #fff; }
+.btn-primary:hover { background: #096a8e; }
 .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
 .btn-ghost:hover { background: #eef1f7; }
 /* Ghost buttons sit on the dark topbar — give them light text and a visible edge. */
