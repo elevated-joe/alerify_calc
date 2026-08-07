@@ -172,7 +172,9 @@ export default function ProposalSheet({ quote, addons, keyed }: Props) {
               <tbody>
                 <tr>
                   <td className="pr-name">Client setup</td>
-                  <td className="pr-spec">VM, networking &amp; configuration are {customer} responsibilities</td>
+                  <td className="pr-spec">
+                    VM, networking &amp; configuration are {setupClient > 0 ? "Alerify" : customer} responsibilities
+                  </td>
                   <td className="pr-amt">{fmt(setupClient)}</td>
                 </tr>
                 <tr>
