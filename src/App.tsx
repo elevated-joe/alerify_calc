@@ -8,6 +8,7 @@ import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { downloadSheetPdf } from "./exportPdf";
+import { downloadQuoteDocx } from "./exportDocx";
 
 let seq = 0;
 const nextId = () => "s" + ++seq + "_" + Math.floor(performance.now());
@@ -60,9 +61,9 @@ export default function App() {
     setExporting("quote");
     try {
       const name = slug(quote.quoteName) || "Quote";
-      await downloadSheetPdf("quoteDoc", `Alerify-${name}-${dateSlug()}.pdf`);
+      await downloadQuoteDocx(quote, pricing.addons, keyed, `Alerify-Proposal-${name}-${dateSlug()}.docx`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not build the PDF.");
+      alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
       setExporting("");
     }
@@ -186,7 +187,7 @@ export default function App() {
             {exporting === "compare" ? "Building…" : "Export comparison (PDF)"}
           </button>
           <button className="btn btn-ghost" onClick={exportQuote} disabled={!!exporting}>
-            {exporting === "quote" ? "Building…" : "Export quote (PDF)"}
+            {exporting === "quote" ? "Building…" : "Export proposal (Word)"}
           </button>
         </div>
       </header>
