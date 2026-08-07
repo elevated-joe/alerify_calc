@@ -406,18 +406,29 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .c-footer span { opacity: .72; padding: 0 7px; }
 
 /* ---------- Print ---------- */
-/* Zero page margin => the browser drops its own date/title header and URL/page footer. */
-@page { size: A4; margin: 0; }
+/* Zero page margin => the browser drops its own date/title header and URL/page footer.
+   No fixed `size` (e.g. A4): let the device use its actual paper (US Letter on iOS in the
+   US). Forcing A4 onto Letter paper leaves white bands, which mobile showed as the
+   masthead/footer not reaching the page edges. */
+@page { margin: 0; }
 @media print {
-  html, body { margin: 0; background: #fff; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff; width: 100%; }
   .topbar, main, .editor { display: none !important; }
   /* Default print = client quote; comparison print = branded sheet. */
   #quoteDoc { display: block !important; }
   #compareDoc { display: none !important; }
   body.print-compare #quoteDoc { display: none !important; }
   body.print-compare #compareDoc { display: block !important; }
-  /* Fill the page and pin the cyan footer to the bottom. */
-  .csheet { max-width: none; min-height: 100vh; display: flex; flex-direction: column; }
+  #quoteDoc, #compareDoc { margin: 0 !important; padding: 0 !important; width: 100%; }
+  /* Full-bleed: fill the page width edge-to-edge and pin the cyan footer to the bottom.
+     min-height uses 100% (the page box) rather than 100vh, which mobile print viewports
+     mis-measure and then shrink-to-fit, insetting the whole sheet. */
+  html, body { height: auto; }
+  .csheet {
+    max-width: none !important; width: 100%; margin: 0 !important;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  .c-mast, .c-footer { width: 100%; box-sizing: border-box; }
   .c-footer { margin-top: auto; }
   .csheet, .csheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .c-row, .c-band, .c-included tr, .qb-table tbody tr { break-inside: avoid; }
