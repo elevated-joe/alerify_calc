@@ -73,20 +73,34 @@ export default function ProposalSheet({ quote, addons, keyed }: Props) {
 
   return (
     <div id="proposalDoc" aria-hidden="true">
-      {/* ---------- Page 1: cover, what's included, monthly services ---------- */}
-      <section className="csheet proposal-page">
-        <header className="c-mast">
-          <div className="c-brandline">
-            <div className="c-wordmark">A<span>LERIFY</span></div>
-            <div className="c-tagline">Your Data. Our Duty.</div>
-          </div>
-          <div className="c-eyebrow">Private Cloud · Hosting Proposal · Monthly</div>
-          <h1 className="c-headline">Virtual Private Cloud Proposal</h1>
-          <p className="pr-meta">
-            Prepared for <b>{customer}</b> &nbsp;·&nbsp; {dateStr} &nbsp;·&nbsp; Quote {quoteNo}
-            {ref ? <> &nbsp;·&nbsp; Ref {ref}</> : null}
+      {/* ---------- Cover ---------- */}
+      <section className="csheet proposal-page pr-cover">
+        <div className="pr-cover-top">
+          <div className="c-wordmark">A<span>LERIFY</span></div>
+          <div className="c-tagline">Your Data. Our Duty.</div>
+        </div>
+        <div className="pr-cover-hero">
+          <div className="pr-cover-eyebrow">Private Cloud · Hosting Proposal</div>
+          <h1 className="pr-cover-title">Virtual Private<br />Cloud Proposal</h1>
+          <p className="pr-cover-lead">
+            Enterprise-grade private cloud hosting from a Tier 3, SOC&nbsp;2-certified data center in Harrisburg, PA —
+            with 24×7 human support and no data-transfer fees.
           </p>
-        </header>
+          <div className="pr-prepared">
+            <div><span>Prepared for</span><b>{customer}</b></div>
+            <div><span>Date</span><b>{dateStr}</b></div>
+            <div>
+              <span>Quote</span>
+              <b>{quoteNo}{ref ? ` · Ref ${ref}` : ""}</b>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </section>
+
+      {/* ---------- Page: what's included, monthly services ---------- */}
+      <section className="csheet proposal-page">
+        <BrandBar customer={customer} />
 
         <div className="pr-body">
           <div className="pr-sec">
