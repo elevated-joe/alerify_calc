@@ -9,7 +9,6 @@ import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
 import { downloadProposalDocx } from "./exportDocx";
-import { downloadProposalNativeDocx } from "./exportDocxNative";
 import ProposalSheet from "./ProposalSheet";
 
 let seq = 0;
@@ -52,7 +51,7 @@ export default function App() {
 
   // Exports build a downloadable PDF client-side (see exportPdf.ts) rather than
   // going through window.print(), which iOS/Brave render inconsistently.
-  const [exporting, setExporting] = useState<"" | "wordimg" | "wordedit" | "styled" | "compare">("");
+  const [exporting, setExporting] = useState<"" | "wordimg" | "styled" | "compare">("");
   const dateSlug = () => {
     const d = new Date();
     return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
@@ -65,19 +64,6 @@ export default function App() {
     setExporting("wordimg");
     try {
       await downloadProposalDocx("proposalDoc", `Alerify-Proposal-${qname()}-${dateSlug()}.docx`);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not build the proposal.");
-    } finally {
-      setExporting("");
-    }
-  }
-  // Word · editable: native docx (real text/tables), plainer but fully editable.
-  async function exportWordEditable() {
-    if (exporting) return;
-    setExporting("wordedit");
-    try {
-      const logoUrl = import.meta.env.BASE_URL + "alerify-logo.png";
-      await downloadProposalNativeDocx(quote, pricing.addons, keyed, logoUrl, `Alerify-Proposal-${qname()}-editable-${dateSlug()}.docx`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
@@ -214,13 +200,10 @@ export default function App() {
             {exporting === "compare" ? "Building…" : "Export comparison (PDF)"}
           </button>
           <button className="btn btn-ghost" onClick={exportWordStyled} disabled={!!exporting}>
-            {exporting === "wordimg" ? "Building…" : "Proposal (Word · styled)"}
-          </button>
-          <button className="btn btn-ghost" onClick={exportWordEditable} disabled={!!exporting}>
-            {exporting === "wordedit" ? "Building…" : "Proposal (Word · editable)"}
+            {exporting === "wordimg" ? "Building…" : "Export proposal (Word)"}
           </button>
           <button className="btn btn-ghost" onClick={exportProposalStyled} disabled={!!exporting}>
-            {exporting === "styled" ? "Building…" : "Proposal (styled PDF)"}
+            {exporting === "styled" ? "Building…" : "Export proposal (styled PDF)"}
           </button>
         </div>
       </header>
