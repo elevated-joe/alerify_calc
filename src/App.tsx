@@ -7,8 +7,9 @@ import Editor from "./Editor";
 import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
-import { downloadSheetPdf } from "./exportPdf";
+import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
 import { downloadQuoteDocx } from "./exportDocx";
+import ProposalSheet from "./ProposalSheet";
 
 let seq = 0;
 const nextId = () => "s" + ++seq + "_" + Math.floor(performance.now());
@@ -50,7 +51,7 @@ export default function App() {
 
   // Exports build a downloadable PDF client-side (see exportPdf.ts) rather than
   // going through window.print(), which iOS/Brave render inconsistently.
-  const [exporting, setExporting] = useState<"" | "quote" | "compare">("");
+  const [exporting, setExporting] = useState<"" | "quote" | "styled" | "compare">("");
   const dateSlug = () => {
     const d = new Date();
     return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
@@ -62,6 +63,18 @@ export default function App() {
     try {
       const name = slug(quote.quoteName) || "Quote";
       await downloadQuoteDocx(quote, pricing.addons, keyed, `Alerify-Proposal-${name}-${dateSlug()}.docx`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not build the proposal.");
+    } finally {
+      setExporting("");
+    }
+  }
+  async function exportProposalStyled() {
+    if (exporting) return;
+    setExporting("styled");
+    try {
+      const name = slug(quote.quoteName) || "Quote";
+      await downloadProposalPdf("proposalDoc", `Alerify-Proposal-${name}-${dateSlug()}.pdf`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not build the proposal.");
     } finally {
@@ -188,6 +201,9 @@ export default function App() {
           </button>
           <button className="btn btn-ghost" onClick={exportQuote} disabled={!!exporting}>
             {exporting === "quote" ? "Building…" : "Export proposal (Word)"}
+          </button>
+          <button className="btn btn-ghost" onClick={exportProposalStyled} disabled={!!exporting}>
+            {exporting === "styled" ? "Building…" : "Export proposal (styled PDF)"}
           </button>
         </div>
       </header>
@@ -346,6 +362,7 @@ export default function App() {
       )}
 
       <QuoteDoc quote={quote} addons={pricing.addons} keyed={keyed} />
+      <ProposalSheet quote={quote} addons={pricing.addons} keyed={keyed} />
       <CompareSheet quote={quote} addons={pricing.addons} compare={pricing.compare} keyed={keyed} />
     </>
   );
