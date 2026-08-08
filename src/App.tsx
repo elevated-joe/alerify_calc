@@ -8,7 +8,6 @@ import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
-import { downloadProposalDocx } from "./exportDocx";
 import ProposalSheet from "./ProposalSheet";
 
 let seq = 0;
@@ -52,25 +51,13 @@ export default function App() {
 
   // Exports build a downloadable PDF client-side (see exportPdf.ts) rather than
   // going through window.print(), which iOS/Brave render inconsistently.
-  const [exporting, setExporting] = useState<"" | "wordimg" | "styled" | "compare">("");
+  const [exporting, setExporting] = useState<"" | "styled" | "compare">("");
   const dateSlug = () => {
     const d = new Date();
     return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
   };
   const slug = (s: string) => s.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   const qname = () => slug(quote.quoteName) || "Quote";
-  // Word · styled: pixel-perfect brand design (page images, not text-editable).
-  async function exportWordStyled() {
-    if (exporting) return;
-    setExporting("wordimg");
-    try {
-      await downloadProposalDocx("proposalDoc", `Alerify-Proposal-${qname()}-${dateSlug()}.docx`);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not build the proposal.");
-    } finally {
-      setExporting("");
-    }
-  }
   async function exportProposalStyled() {
     if (exporting) return;
     setExporting("styled");
@@ -200,11 +187,8 @@ export default function App() {
           <button className="btn btn-ghost" onClick={exportComparison} disabled={!!exporting}>
             {exporting === "compare" ? "Building…" : "Export comparison (PDF)"}
           </button>
-          <button className="btn btn-ghost" onClick={exportWordStyled} disabled={!!exporting}>
-            {exporting === "wordimg" ? "Building…" : "Export proposal (Word)"}
-          </button>
           <button className="btn btn-ghost" onClick={exportProposalStyled} disabled={!!exporting}>
-            {exporting === "styled" ? "Building…" : "Export proposal (styled PDF)"}
+            {exporting === "styled" ? "Building…" : "Export proposal (PDF)"}
           </button>
         </div>
       </header>
