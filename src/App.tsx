@@ -217,6 +217,25 @@ export default function App() {
           </div>
         </section>
 
+        <section className="card shared-services">
+          <h2>Shared environment services</h2>
+          <p className="section-hint">Applied once to the whole environment, not per server.</p>
+          <div className="shared-grid">
+            <div className="field">
+              <label htmlFor="fwSelect">Firewall</label>
+              <select id="fwSelect" value={quote.firewall}
+                onChange={(e) => setQuote((q) => ({ ...q, firewall: e.target.value as Quote["firewall"] }))}>
+                <option value="standard">Standard (included)</option>
+                <option value="advanced">Advanced — Small</option>
+              </select>
+            </div>
+            <div className="shared-price">
+              <span className="metric-label">Firewall / month</span>
+              <span className="metric-value">{fmt(totals.fw.client)}</span>
+            </div>
+          </div>
+        </section>
+
         <div>
           {quote.servers.map((s) => (
             <ServerCard
@@ -240,25 +259,6 @@ export default function App() {
           <button className="btn btn-primary" onClick={addServer}>+ Add server</button>
           <button className="btn btn-ghost" onClick={clearAll}>Clear all</button>
         </div>
-
-        <section className="card shared-services">
-          <h2>Shared environment services</h2>
-          <p className="section-hint">Applied once to the whole environment, not per server.</p>
-          <div className="shared-grid">
-            <div className="field">
-              <label htmlFor="fwSelect">Firewall</label>
-              <select id="fwSelect" value={quote.firewall}
-                onChange={(e) => setQuote((q) => ({ ...q, firewall: e.target.value as Quote["firewall"] }))}>
-                <option value="standard">Standard (included)</option>
-                <option value="advanced">Advanced — Small</option>
-              </select>
-            </div>
-            <div className="shared-price">
-              <span className="metric-label">Firewall / month</span>
-              <span className="metric-value">{fmt(totals.fw.client)}</span>
-            </div>
-          </div>
-        </section>
 
         <section className="summary card">
           <h2>Quote summary</h2>
