@@ -19,7 +19,7 @@ export default function ColoPanel({ catalog, config: c, onChange }: Props) {
   return (
     <section className="card colo">
       <div className="colo-head">
-        <h2>Colocation quote <span className="colo-beta">beta</span></h2>
+        <h2>Colocation quote</h2>
         <p className="section-hint">Rack space (power included), connectivity and add-ons. Rates from the Alerify data-center services sheet.</p>
       </div>
 
