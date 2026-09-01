@@ -127,3 +127,22 @@ export const BANDWIDTH: BandwidthOption[] = [
 // One-time charges.
 export const SETUP_PER_U: ColoRate = { cost: 0, client: 100 }; // "Rackspace per U setup"
 export const BIOMETRICS: ColoRate = { cost: 2000, client: 2000 }; // optional rack biometric access
+
+// The editable colocation catalog (persisted in Pricing.colo).
+export interface ColoCatalog {
+  tiers: RackTier[];
+  ipBlocks: IpBlock[];
+  bandwidth: BandwidthOption[];
+  addons: ColoAddon[];
+  setupPerU: ColoRate;
+  biometrics: ColoRate;
+}
+
+export const COLO_DEFAULT: ColoCatalog = {
+  tiers: RACK_TIERS,
+  ipBlocks: IP_BLOCKS,
+  bandwidth: BANDWIDTH,
+  addons: COLO_ADDONS,
+  setupPerU: SETUP_PER_U,
+  biometrics: BIOMETRICS,
+};

@@ -1,22 +1,26 @@
 import type { Pricing, Quote } from "./types";
 import { ADDONS, COMPARE, COMPUTE } from "./data";
+import { COLO_DEFAULT } from "./coloData";
+import { defaultColo, type ColoConfig } from "./coloPricing";
 
 const QUOTE_KEY = "alerify_quote_v3";
 const PRICING_KEY = "alerify_pricing_v3";
+const COLO_KEY = "alerify_colo_v1";
 
 export function clone<T>(x: T): T {
   return JSON.parse(JSON.stringify(x));
 }
 
 export function defaultPricing(): Pricing {
-  return { compute: clone(COMPUTE), addons: clone(ADDONS), compare: clone(COMPARE) };
+  return { compute: clone(COMPUTE), addons: clone(ADDONS), compare: clone(COMPARE), colo: clone(COLO_DEFAULT) };
 }
 
 export function isDefaultPricing(p: Pricing): boolean {
   return (
     JSON.stringify(p.compute) === JSON.stringify(COMPUTE) &&
     JSON.stringify(p.addons) === JSON.stringify(ADDONS) &&
-    JSON.stringify(p.compare) === JSON.stringify(COMPARE)
+    JSON.stringify(p.compare) === JSON.stringify(COMPARE) &&
+    JSON.stringify(p.colo) === JSON.stringify(COLO_DEFAULT)
   );
 }
 
@@ -30,12 +34,31 @@ export function loadPricing(): Pricing {
         compute: Array.isArray(stored.compute) && stored.compute.length ? stored.compute : base.compute,
         addons: stored.addons ? { ...base.addons, ...stored.addons, sqlMinCores: base.addons.sqlMinCores } : base.addons,
         compare: stored.compare ? deepMerge(base.compare, stored.compare) : base.compare,
+        colo: stored.colo ? { ...base.colo, ...stored.colo } : base.colo,
       };
     }
   } catch {
     /* ignore */
   }
   return defaultPricing();
+}
+
+export function loadColoConfig(): ColoConfig {
+  try {
+    const raw = localStorage.getItem(COLO_KEY);
+    if (raw) return { ...defaultColo(), ...JSON.parse(raw) };
+  } catch {
+    /* ignore */
+  }
+  return defaultColo();
+}
+
+export function saveColoConfig(c: ColoConfig): void {
+  try {
+    localStorage.setItem(COLO_KEY, JSON.stringify(c));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function savePricing(p: Pricing): void {

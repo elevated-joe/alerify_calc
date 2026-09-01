@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Addons, Compare, Instance, Pricing, Quote, ServerConfig } from "./types";
 import { byKey, cloudCompare, firewallLine, fmt, priceServer, vcpuOptions } from "./pricing";
-import { clearPricing, defaultPricing, isDefaultPricing, loadPricing, loadQuote, savePricing, saveQuote } from "./storage";
+import { clearPricing, defaultPricing, isDefaultPricing, loadColoConfig, loadPricing, loadQuote, saveColoConfig, savePricing, saveQuote } from "./storage";
+import type { ColoCatalog } from "./coloData";
 import ServerCard from "./ServerCard";
 import Editor from "./Editor";
 import QuoteDoc from "./QuoteDoc";
@@ -41,10 +42,12 @@ export default function App() {
   const [status, setStatus] = useState<Status>({ kind: "", text: "" });
   // Off-by-default colocation feature. Enable per-browser with ?colo=on.
   const [coloEnabled] = useState(() => flagEnabled("colo"));
+  const [coloCfg, setColoCfg] = useState(() => loadColoConfig());
 
   // Persist.
   useEffect(() => savePricing(pricing), [pricing]);
   useEffect(() => saveQuote(quote), [quote]);
+  useEffect(() => saveColoConfig(coloCfg), [coloCfg]);
 
   // Body classes drive show/hide + print CSS.
   useEffect(() => {
@@ -116,6 +119,7 @@ export default function App() {
   const setAddons = (addons: Addons) => setPricing((p) => ({ ...p, addons }));
   const setCompare = (compare: Compare) => setPricing((p) => ({ ...p, compare }));
   const setCompute = (compute: Instance[]) => setPricing((p) => ({ ...p, compute }));
+  const setColo = (colo: ColoCatalog) => setPricing((p) => ({ ...p, colo }));
 
   const resetPricing = () => {
     if (!confirm("Reset all pricing back to the built-in defaults?")) return;
@@ -338,7 +342,7 @@ export default function App() {
           </div>
         </section>
 
-        {coloEnabled && <ColoPanel />}
+        {coloEnabled && <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} />}
 
         <p className="disclaimer">
           All figures are monthly (USD) and derived from the Alerify pricing sheet. Compute pricing is based on a
@@ -355,6 +359,8 @@ export default function App() {
           onAddons={setAddons}
           onCompare={setCompare}
           onCompute={setCompute}
+          onColo={setColo}
+          showColo={coloEnabled}
           onReset={resetPricing}
           onExport={exportDataTs}
           onImport={importFile}
@@ -363,7 +369,8 @@ export default function App() {
       )}
 
       <QuoteDoc quote={quote} addons={pricing.addons} keyed={keyed} />
-      <ProposalSheet quote={quote} addons={pricing.addons} keyed={keyed} />
+      <ProposalSheet quote={quote} addons={pricing.addons} keyed={keyed}
+        showColo={coloEnabled} coloConfig={coloCfg} coloCatalog={pricing.colo} />
       <CompareSheet quote={quote} addons={pricing.addons} compare={pricing.compare} keyed={keyed} />
     </>
   );

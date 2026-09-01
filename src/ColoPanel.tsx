@@ -1,35 +1,19 @@
-import { useEffect, useState } from "react";
 import { fmt, marginPct } from "./pricing";
-import { BANDWIDTH, COLO_ADDONS, IP_BLOCKS, RACK_SIZES, RACK_TIERS } from "./coloData";
-import { defaultColo, priceColo, type ColoConfig } from "./coloPricing";
+import { RACK_SIZES, type ColoCatalog } from "./coloData";
+import { priceColo, type ColoConfig } from "./coloPricing";
 
-const KEY = "alerify_colo_v1";
-
-function loadColo(): ColoConfig {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return { ...defaultColo(), ...JSON.parse(raw) };
-  } catch {
-    /* ignore */
-  }
-  return defaultColo();
+interface Props {
+  catalog: ColoCatalog;
+  config: ColoConfig;
+  onChange: (c: ColoConfig) => void;
 }
 
-export default function ColoPanel() {
-  const [c, setC] = useState<ColoConfig>(loadColo);
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(c));
-    } catch {
-      /* ignore */
-    }
-  }, [c]);
-
-  const set = (patch: Partial<ColoConfig>) => setC((prev) => ({ ...prev, ...patch }));
+export default function ColoPanel({ catalog, config: c, onChange }: Props) {
+  const set = (patch: Partial<ColoConfig>) => onChange({ ...c, ...patch });
   const setAddon = (key: string, qty: number) =>
-    setC((prev) => ({ ...prev, addons: { ...prev.addons, [key]: Math.max(0, qty || 0) } }));
+    onChange({ ...c, addons: { ...c.addons, [key]: Math.max(0, qty || 0) } });
 
-  const p = priceColo(c);
+  const p = priceColo(c, catalog);
   const margin = marginPct(p.monthlyCost, p.monthlyClient);
 
   return (
@@ -43,7 +27,7 @@ export default function ColoPanel() {
         <div className="field">
           <label htmlFor="coloTier">Rack tier (power density)</label>
           <select id="coloTier" value={c.tier} onChange={(e) => set({ tier: e.target.value })}>
-            {RACK_TIERS.map((t) => (
+            {catalog.tiers.map((t) => (
               <option key={t.key} value={t.key}>{t.label}</option>
             ))}
           </select>
@@ -59,7 +43,7 @@ export default function ColoPanel() {
         <div className="field">
           <label htmlFor="coloIp">IP block</label>
           <select id="coloIp" value={c.ip} onChange={(e) => set({ ip: e.target.value })}>
-            {IP_BLOCKS.map((b) => (
+            {catalog.ipBlocks.map((b) => (
               <option key={b.key} value={b.key}>{b.label}</option>
             ))}
           </select>
@@ -67,7 +51,7 @@ export default function ColoPanel() {
         <div className="field">
           <label htmlFor="coloBw">Committed bandwidth</label>
           <select id="coloBw" value={c.bandwidth} onChange={(e) => set({ bandwidth: e.target.value })}>
-            {BANDWIDTH.map((b) => (
+            {catalog.bandwidth.map((b) => (
               <option key={b.key} value={b.key}>{b.label}</option>
             ))}
           </select>
@@ -77,7 +61,7 @@ export default function ColoPanel() {
       <div className="colo-addons">
         <span className="colo-sub">Add-ons</span>
         <div className="colo-addon-grid">
-          {COLO_ADDONS.map((a) => (
+          {catalog.addons.map((a) => (
             <div className="field field-inline" key={a.key}>
               <label htmlFor={"colo-" + a.key}>{a.label}</label>
               <input id={"colo-" + a.key} type="number" min={0} step={1} value={c.addons[a.key] || 0}

@@ -55,6 +55,7 @@ export interface Pricing {
   compute: Instance[];
   addons: Addons;
   compare: Compare;
+  colo: import("./coloData").ColoCatalog;
 }
 
 export interface ServerConfig {

@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import type { Addons, Compare, Instance, Pricing, Provider } from "./types";
 import { deriveFamily, marginPct, priceFromMargin } from "./pricing";
+import { RACK_SIZES, type ColoCatalog, type ColoRate } from "./coloData";
 
 interface Props {
   pricing: Pricing;
@@ -9,6 +10,8 @@ interface Props {
   onAddons: (a: Addons) => void;
   onCompare: (c: Compare) => void;
   onCompute: (c: Instance[]) => void;
+  onColo: (c: ColoCatalog) => void;
+  showColo: boolean;
   onReset: () => void;
   onExport: () => void;
   onImport: (file: File) => void;
@@ -124,12 +127,14 @@ export default function Editor({
   onAddons,
   onCompare,
   onCompute,
+  onColo,
+  showColo,
   onReset,
   onExport,
   onImport,
   onClose,
 }: Props) {
-  const { addons, compare, compute } = pricing;
+  const { addons, compare, compute, colo } = pricing;
   const [bulkMargin, setBulkMargin] = useState("70");
   const [bulkTarget, setBulkTarget] = useState<"both" | "linux" | "windows">("both");
 
@@ -144,6 +149,12 @@ export default function Editor({
 
   function setProvider(prov: "aws" | "azure", key: keyof Provider, value: number) {
     onCompare({ ...compare, [prov]: { ...compare[prov], [key]: value } });
+  }
+
+  function updateColo(mut: (cat: ColoCatalog) => void) {
+    const next = JSON.parse(JSON.stringify(colo)) as ColoCatalog;
+    mut(next);
+    onColo(next);
   }
 
   function setInstance(idx: number, patch: Partial<Instance>) {
@@ -363,6 +374,104 @@ export default function Editor({
       <button className="btn btn-ghost" onClick={addInstance}>
         + Add instance
       </button>
+
+      {showColo && (
+        <>
+          <h3 className="editor-h3">
+            Colocation — rack space <small>(power included; per tier &amp; size)</small>
+          </h3>
+          <div className="edit-scroll">
+            <table className="edit-table">
+              <thead>
+                <tr>
+                  <th>Tier</th>
+                  <th>Rack space</th>
+                  <th className="num">Cost / mo</th>
+                  <th className="num">Margin %</th>
+                  <th className="num">Price / mo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {colo.tiers.map((t, ti) =>
+                  RACK_SIZES.map((sz) => {
+                    const rate = t.space[sz.key];
+                    return (
+                      <tr key={t.key + sz.key}>
+                        <td><strong>{t.label}</strong> <span className="muted">{t.power}</span></td>
+                        <td className="muted">{sz.label}</td>
+                        <td className="num">
+                          <input type="number" step={0.01} value={rate.cost}
+                            onChange={(e) => updateColo((cat) => { cat.tiers[ti].space[sz.key].cost = n(e.target.value); })} />
+                        </td>
+                        <td className="num">
+                          <MarginInput cost={rate.cost} client={rate.client}
+                            onPrice={(price) => updateColo((cat) => { cat.tiers[ti].space[sz.key].client = price; })} />
+                        </td>
+                        <td className="num">
+                          <input type="number" step={0.01} value={rate.client}
+                            onChange={(e) => updateColo((cat) => { cat.tiers[ti].space[sz.key].client = n(e.target.value); })} />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 className="editor-h3">Colocation — add-ons, IPs, bandwidth &amp; one-time</h3>
+          <div className="edit-scroll">
+            <table className="edit-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Basis</th>
+                  <th className="num">Cost</th>
+                  <th className="num">Margin %</th>
+                  <th className="num">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  // Flatten every editable ColoRate into rows with a targeted setter.
+                  const rows: { label: string; basis: string; rate: ColoRate; set: (cat: ColoCatalog, f: "cost" | "client", v: number) => void }[] = [];
+                  colo.addons.forEach((a, i) =>
+                    rows.push({ label: a.label, basis: `per ${a.unit} / mo`, rate: a.rate, set: (cat, f, v) => { cat.addons[i].rate[f] = v; } })
+                  );
+                  colo.ipBlocks.forEach((b, i) => {
+                    if (b.key === "none") return;
+                    rows.push({ label: `IP block ${b.label}`, basis: "per block / mo", rate: b.rate, set: (cat, f, v) => { cat.ipBlocks[i].rate[f] = v; } });
+                  });
+                  colo.bandwidth.forEach((b, i) => {
+                    if (b.key === "none") return;
+                    rows.push({ label: b.label, basis: "committed / mo", rate: b.rate, set: (cat, f, v) => { cat.bandwidth[i].rate[f] = v; } });
+                  });
+                  rows.push({ label: "Install & setup", basis: "per U / one-time", rate: colo.setupPerU, set: (cat, f, v) => { cat.setupPerU[f] = v; } });
+                  rows.push({ label: "Rack biometric access", basis: "one-time", rate: colo.biometrics, set: (cat, f, v) => { cat.biometrics[f] = v; } });
+                  return rows.map((r, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{r.label}</strong></td>
+                      <td className="muted">{r.basis}</td>
+                      <td className="num">
+                        <input type="number" step={0.01} value={r.rate.cost}
+                          onChange={(e) => updateColo((cat) => r.set(cat, "cost", n(e.target.value)))} />
+                      </td>
+                      <td className="num">
+                        <MarginInput cost={r.rate.cost} client={r.rate.client}
+                          onPrice={(price) => updateColo((cat) => r.set(cat, "client", price))} />
+                      </td>
+                      <td className="num">
+                        <input type="number" step={0.01} value={r.rate.client}
+                          onChange={(e) => updateColo((cat) => r.set(cat, "client", n(e.target.value)))} />
+                      </td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }

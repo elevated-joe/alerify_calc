@@ -1,7 +1,4 @@
-import {
-  BANDWIDTH, BIOMETRICS, COLO_ADDONS, IP_BLOCKS, RACK_SIZES, RACK_TIERS,
-  SETUP_PER_U, type ColoRate, type SizeKey,
-} from "./coloData";
+import { RACK_SIZES, type ColoCatalog, type ColoRate, type SizeKey } from "./coloData";
 
 export interface ColoConfig {
   tier: string; // RackTier.key
@@ -37,8 +34,8 @@ export interface ColoPriced {
 
 const zero: ColoPriced = { monthlyLines: [], onceLines: [], monthlyClient: 0, monthlyCost: 0, onceClient: 0, onceCost: 0 };
 
-export function priceColo(c: ColoConfig): ColoPriced {
-  const tier = RACK_TIERS.find((t) => t.key === c.tier);
+export function priceColo(c: ColoConfig, cat: ColoCatalog): ColoPriced {
+  const tier = cat.tiers.find((t) => t.key === c.tier);
   const size = RACK_SIZES.find((s) => s.key === c.size);
   if (!tier || !size) return zero;
   const out: ColoPriced = { monthlyLines: [], onceLines: [], monthlyClient: 0, monthlyCost: 0, onceClient: 0, onceCost: 0 };
@@ -60,22 +57,22 @@ export function priceColo(c: ColoConfig): ColoPriced {
   addMonthly(`Rackspace — ${size.label}`, `${tier.label} · ${tier.power} · power included`, 1, tier.space[c.size]);
 
   // IP block.
-  const ip = IP_BLOCKS.find((b) => b.key === c.ip);
+  const ip = cat.ipBlocks.find((b) => b.key === c.ip);
   if (ip && ip.key !== "none") addMonthly(`IP block ${ip.label.split(" —")[0]}`, ip.label, 1, ip.rate);
 
   // Bandwidth.
-  const bw = BANDWIDTH.find((b) => b.key === c.bandwidth);
+  const bw = cat.bandwidth.find((b) => b.key === c.bandwidth);
   if (bw && bw.key !== "none") addMonthly(bw.label, "Committed data rate", 1, bw.rate);
 
   // Per-unit add-ons.
-  for (const a of COLO_ADDONS) {
+  for (const a of cat.addons) {
     const qty = c.addons[a.key] || 0;
     addMonthly(a.label, `${qty} × ${a.unit}`, qty, a.rate);
   }
 
   // One-time.
-  if (c.setup) addOnce("Install & setup", `${size.u} U × per-U setup`, size.u, SETUP_PER_U);
-  if (c.biometrics) addOnce("Rack biometric access", "One-time provisioning", 1, BIOMETRICS);
+  if (c.setup) addOnce("Install & setup", `${size.u} U × per-U setup`, size.u, cat.setupPerU);
+  if (c.biometrics) addOnce("Rack biometric access", "One-time provisioning", 1, cat.biometrics);
 
   return out;
 }
