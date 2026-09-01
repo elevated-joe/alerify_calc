@@ -44,7 +44,7 @@ export default function ColoPanel() {
           <label htmlFor="coloTier">Rack tier (power density)</label>
           <select id="coloTier" value={c.tier} onChange={(e) => set({ tier: e.target.value })}>
             {RACK_TIERS.map((t) => (
-              <option key={t.key} value={t.key}>{t.label} · {t.power}</option>
+              <option key={t.key} value={t.key}>{t.label}</option>
             ))}
           </select>
         </div>
