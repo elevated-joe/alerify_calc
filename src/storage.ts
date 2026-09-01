@@ -1,6 +1,5 @@
 import type { Pricing, Quote } from "./types";
-import { ADDONS, COMPARE, COMPUTE } from "./data";
-import { COLO_DEFAULT } from "./coloData";
+import { ADDONS, COLO, COMPARE, COMPUTE } from "./data";
 import { defaultColo, type ColoConfig } from "./coloPricing";
 
 const QUOTE_KEY = "alerify_quote_v3";
@@ -12,7 +11,7 @@ export function clone<T>(x: T): T {
 }
 
 export function defaultPricing(): Pricing {
-  return { compute: clone(COMPUTE), addons: clone(ADDONS), compare: clone(COMPARE), colo: clone(COLO_DEFAULT) };
+  return { compute: clone(COMPUTE), addons: clone(ADDONS), compare: clone(COMPARE), colo: clone(COLO) };
 }
 
 export function isDefaultPricing(p: Pricing): boolean {
@@ -20,7 +19,7 @@ export function isDefaultPricing(p: Pricing): boolean {
     JSON.stringify(p.compute) === JSON.stringify(COMPUTE) &&
     JSON.stringify(p.addons) === JSON.stringify(ADDONS) &&
     JSON.stringify(p.compare) === JSON.stringify(COMPARE) &&
-    JSON.stringify(p.colo) === JSON.stringify(COLO_DEFAULT)
+    JSON.stringify(p.colo) === JSON.stringify(COLO)
   );
 }
 

@@ -1,7 +1,12 @@
 import type { Addons, Compare, Instance } from './types';
+import type { ColoCatalog } from './coloData';
+import { COLO_DEFAULT } from './coloData';
 
 // Built-in default pricing. Edit here (then commit) to change defaults for everyone.
 // The in-app editor can also override these at runtime (stored per-device).
+
+// Colocation catalog default. "Export data.ts" replaces this with a full literal.
+export const COLO: ColoCatalog = COLO_DEFAULT;
 
 export const ADDONS: Addons = {
   "ebsPerGB": {

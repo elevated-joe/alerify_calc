@@ -153,6 +153,7 @@ export default function App() {
   function exportDataTs() {
     const lines = [
       "import type { Addons, Compare, Instance } from './types';",
+      "import type { ColoCatalog } from './coloData';",
       "",
       "// Alerify pricing data — exported from the in-app editor.",
       "// Replace src/data.ts with this file to update built-in pricing for everyone.",
@@ -160,6 +161,8 @@ export default function App() {
       "export const ADDONS: Addons = " + JSON.stringify(pricing.addons, null, 2) + ";",
       "",
       "export const COMPARE: Compare = " + JSON.stringify(pricing.compare, null, 2) + ";",
+      "",
+      "export const COLO: ColoCatalog = " + JSON.stringify(pricing.colo, null, 2) + ";",
       "",
       "export const COMPUTE: Instance[] = " + JSON.stringify(pricing.compute) + ";",
       "",
