@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Addons, Compare, Instance, Pricing, Quote, ServerConfig } from "./types";
 import { byKey, cloudCompare, firewallLine, fmt, priceServer, vcpuOptions } from "./pricing";
-import { clearPricing, defaultPricing, isDefaultPricing, loadColoConfig, loadPricing, loadQuote, saveColoConfig, savePricing, saveQuote } from "./storage";
+import { clearPricing, defaultPricing, isDefaultPricing, loadColoRacks, loadPricing, loadQuote, saveColoRacks, savePricing, saveQuote } from "./storage";
 import type { ColoCatalog } from "./coloData";
 import ServerCard from "./ServerCard";
 import Editor from "./Editor";
@@ -53,12 +53,12 @@ export default function App() {
   const [status, setStatus] = useState<Status>({ kind: "", text: "" });
   // Colocation is on for everyone by default; a visitor can hide it with ?colo=off.
   const [coloEnabled] = useState(() => flagEnabled("colo", true));
-  const [coloCfg, setColoCfg] = useState(() => loadColoConfig());
+  const [coloRacks, setColoRacks] = useState(() => loadColoRacks());
 
   // Persist.
   useEffect(() => savePricing(pricing), [pricing]);
   useEffect(() => saveQuote(quote), [quote]);
-  useEffect(() => saveColoConfig(coloCfg), [coloCfg]);
+  useEffect(() => saveColoRacks(coloRacks), [coloRacks]);
 
   // Body classes drive show/hide + print CSS.
   useEffect(() => {
@@ -118,11 +118,13 @@ export default function App() {
     let once = (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0);
     // Colocation rolls into the grand totals only when added.
     if (coloEnabled && quote.hasColo) {
-      const cp = priceColo(coloCfg, pricing.colo);
-      monthly += cp.monthlyClient; cost += cp.monthlyCost; once += cp.onceClient;
+      for (const r of coloRacks) {
+        const cp = priceColo(r, pricing.colo);
+        monthly += cp.monthlyClient; cost += cp.monthlyCost; once += cp.onceClient;
+      }
     }
     return { monthly, cost, comparable, aws, azure, fw, once };
-  }, [quote.servers, quote.firewall, quote.hasShared, quote.hasColo, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloCfg]);
+  }, [quote.servers, quote.firewall, quote.hasShared, quote.hasColo, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloRacks]);
 
   // Server operations.
   const updateServer = (id: string, patch: Partial<ServerConfig>) =>
@@ -311,7 +313,7 @@ export default function App() {
         </div>
 
         {coloEnabled && quote.hasColo && (
-          <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} onRemove={removeColo} />
+          <ColoPanel catalog={pricing.colo} racks={coloRacks} onChange={setColoRacks} onRemove={removeColo} />
         )}
 
         <section className="summary card">
@@ -419,7 +421,7 @@ export default function App() {
       <QuoteDoc quote={quote} addons={pricing.addons} keyed={keyed} />
       <ProposalSheet quote={quote} addons={pricing.addons} keyed={keyed}
         showShared={quote.hasShared} showColo={coloEnabled && quote.hasColo}
-        coloConfig={coloCfg} coloCatalog={pricing.colo} />
+        coloRacks={coloRacks} coloCatalog={pricing.colo} />
       <CompareSheet quote={quote} addons={pricing.addons} compare={pricing.compare} keyed={keyed} />
     </>
   );

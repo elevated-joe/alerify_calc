@@ -1,10 +1,11 @@
 import type { Pricing, Quote } from "./types";
 import { ADDONS, COLO, COMPARE, COMPUTE } from "./data";
-import { defaultColo, type ColoConfig } from "./coloPricing";
+import { defaultRack, type ColoRack } from "./coloPricing";
 
 const QUOTE_KEY = "alerify_quote_v3";
 const PRICING_KEY = "alerify_pricing_v3";
-const COLO_KEY = "alerify_colo_v1";
+const COLO_KEY = "alerify_colo_v2";
+const COLO_KEY_V1 = "alerify_colo_v1";
 
 export function clone<T>(x: T): T {
   return JSON.parse(JSON.stringify(x));
@@ -42,19 +43,25 @@ export function loadPricing(): Pricing {
   return defaultPricing();
 }
 
-export function loadColoConfig(): ColoConfig {
+export function loadColoRacks(): ColoRack[] {
   try {
     const raw = localStorage.getItem(COLO_KEY);
-    if (raw) return { ...defaultColo(), ...JSON.parse(raw) };
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length) return arr.map((r, i) => ({ ...defaultRack(i + 1), ...r }));
+    }
+    // Migrate the old single-rack config.
+    const v1 = localStorage.getItem(COLO_KEY_V1);
+    if (v1) return [{ ...defaultRack(1), ...JSON.parse(v1) }];
   } catch {
     /* ignore */
   }
-  return defaultColo();
+  return [defaultRack(1)];
 }
 
-export function saveColoConfig(c: ColoConfig): void {
+export function saveColoRacks(racks: ColoRack[]): void {
   try {
-    localStorage.setItem(COLO_KEY, JSON.stringify(c));
+    localStorage.setItem(COLO_KEY, JSON.stringify(racks));
   } catch {
     /* ignore */
   }

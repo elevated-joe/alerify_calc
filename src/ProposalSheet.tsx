@@ -1,7 +1,7 @@
 import type { Addons, Instance, Quote } from "./types";
 import { firewallLine, fmt, priceServer } from "./pricing";
 import type { ColoCatalog } from "./coloData";
-import { priceColo, type ColoConfig } from "./coloPricing";
+import { priceColo, type ColoRack } from "./coloPricing";
 
 interface Props {
   quote: Quote;
@@ -9,7 +9,7 @@ interface Props {
   keyed: Map<string, Instance>;
   showShared?: boolean;
   showColo?: boolean;
-  coloConfig?: ColoConfig;
+  coloRacks?: ColoRack[];
   coloCatalog?: ColoCatalog;
 }
 
@@ -51,10 +51,16 @@ function Footer() {
   );
 }
 
-export default function ProposalSheet({ quote, addons, keyed, showShared = true, showColo, coloConfig, coloCatalog }: Props) {
+export default function ProposalSheet({ quote, addons, keyed, showShared = true, showColo, coloRacks, coloCatalog }: Props) {
   const customer = quote.quoteName.trim() || "Client";
-  const colo = showColo && coloConfig && coloCatalog ? priceColo(coloConfig, coloCatalog) : null;
-  const hasColo = !!colo && (colo.monthlyClient > 0 || colo.onceClient > 0);
+  const coloPriced = showColo && coloRacks && coloCatalog ? coloRacks.map((r) => ({ rack: r, p: priceColo(r, coloCatalog) })) : [];
+  const coloMonthlyLines = coloPriced.flatMap(({ rack, p }) =>
+    p.monthlyLines.map((l) => ({ ...l, detail: `${rack.name} · ${l.detail}` })));
+  const coloOnceLines = coloPriced.flatMap(({ rack, p }) =>
+    p.onceLines.map((l) => ({ ...l, detail: `${rack.name} · ${l.detail}` })));
+  const coloMonthly = coloPriced.reduce((s, { p }) => s + p.monthlyClient, 0);
+  const coloOnce = coloPriced.reduce((s, { p }) => s + p.onceClient, 0);
+  const hasColo = coloMonthly > 0 || coloOnce > 0;
   const setupClient = quote.setupClient ?? 0;
   const setupAdmin = quote.setupAdmin ?? 185;
   const d = new Date();
@@ -173,7 +179,7 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
       </section>
 
       {/* ---------- Colocation (only when enabled and configured) ---------- */}
-      {hasColo && colo && (
+      {hasColo && (
         <section className="csheet proposal-page">
           <BrandBar customer={customer} />
           <div className="pr-body">
@@ -184,7 +190,7 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
                   <tr><th>Item</th><th>Detail</th><th className="pr-amt">Monthly</th></tr>
                 </thead>
                 <tbody>
-                  {colo.monthlyLines.map((l, i) => (
+                  {coloMonthlyLines.map((l, i) => (
                     <tr key={"cm" + i}>
                       <td className="pr-name">{l.label}</td>
                       <td className="pr-spec">{l.detail}</td>
@@ -195,22 +201,22 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
                 <tfoot>
                   <tr className="pr-total">
                     <td colSpan={2}>Colocation monthly total</td>
-                    <td className="pr-amt">{fmt(colo.monthlyClient)}</td>
+                    <td className="pr-amt">{fmt(coloMonthly)}</td>
                   </tr>
                   <tr className="pr-annual">
                     <td colSpan={2}>Annual total (12 × monthly)</td>
-                    <td className="pr-amt">{fmt(colo.monthlyClient * 12)}</td>
+                    <td className="pr-amt">{fmt(coloMonthly * 12)}</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
 
-            {colo.onceLines.length > 0 && (
+            {coloOnceLines.length > 0 && (
               <div className="pr-sec">
                 <h2 className="pr-h">Colocation — one-time</h2>
                 <table className="pr-items">
                   <tbody>
-                    {colo.onceLines.map((l, i) => (
+                    {coloOnceLines.map((l, i) => (
                       <tr key={"co" + i}>
                         <td className="pr-name">{l.label}</td>
                         <td className="pr-spec">{l.detail}</td>
@@ -221,7 +227,7 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
                   <tfoot>
                     <tr className="pr-total">
                       <td colSpan={2}>One-time total</td>
-                      <td className="pr-amt">{fmt(colo.onceClient)}</td>
+                      <td className="pr-amt">{fmt(coloOnce)}</td>
                     </tr>
                   </tfoot>
                 </table>

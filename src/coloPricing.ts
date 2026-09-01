@@ -14,6 +14,18 @@ export function defaultColo(): ColoConfig {
   return { tier: "SD-5kW", size: "quarter", ip: "29", bandwidth: "none", addons: {}, setup: true, biometrics: false };
 }
 
+// A named rack line within a colocation quote (a quote can have several).
+export interface ColoRack extends ColoConfig {
+  id: string;
+  name: string;
+}
+
+let rackSeq = 0;
+export function defaultRack(n: number): ColoRack {
+  const t = typeof performance !== "undefined" ? performance.now() : Date.now();
+  return { id: "colo" + ++rackSeq + "_" + Math.floor(t), name: "Rack " + n, ...defaultColo() };
+}
+
 export interface ColoLine {
   label: string;
   detail: string;
