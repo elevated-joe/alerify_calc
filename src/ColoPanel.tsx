@@ -72,11 +72,6 @@ export default function ColoPanel() {
             ))}
           </select>
         </div>
-        <div className="field">
-          <label htmlFor="coloBurst">Burstable (Mbps, 95th %)</label>
-          <input id="coloBurst" type="number" min={0} step={10} value={c.burstMbps}
-            onChange={(e) => set({ burstMbps: Math.max(0, parseFloat(e.target.value) || 0) })} />
-        </div>
       </div>
 
       <div className="colo-addons">

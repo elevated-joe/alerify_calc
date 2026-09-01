@@ -1,5 +1,5 @@
 import {
-  BANDWIDTH, BIOMETRICS, BURSTABLE, COLO_ADDONS, IP_BLOCKS, RACK_SIZES, RACK_TIERS,
+  BANDWIDTH, BIOMETRICS, COLO_ADDONS, IP_BLOCKS, RACK_SIZES, RACK_TIERS,
   SETUP_PER_U, type ColoRate, type SizeKey,
 } from "./coloData";
 
@@ -8,14 +8,13 @@ export interface ColoConfig {
   size: SizeKey;
   ip: string; // IpBlock.key
   bandwidth: string; // BandwidthOption.key
-  burstMbps: number;
   addons: Record<string, number>; // ColoAddon.key -> qty
   setup: boolean; // per-U install
   biometrics: boolean;
 }
 
 export function defaultColo(): ColoConfig {
-  return { tier: "SD-5kW", size: "quarter", ip: "29", bandwidth: "none", burstMbps: 0, addons: {}, setup: true, biometrics: false };
+  return { tier: "SD-5kW", size: "quarter", ip: "29", bandwidth: "none", addons: {}, setup: true, biometrics: false };
 }
 
 export interface ColoLine {
@@ -62,12 +61,11 @@ export function priceColo(c: ColoConfig): ColoPriced {
 
   // IP block.
   const ip = IP_BLOCKS.find((b) => b.key === c.ip);
-  if (ip) addMonthly(`IP block ${ip.label.split(" —")[0]}`, ip.label, 1, ip.rate);
+  if (ip && ip.key !== "none") addMonthly(`IP block ${ip.label.split(" —")[0]}`, ip.label, 1, ip.rate);
 
   // Bandwidth.
   const bw = BANDWIDTH.find((b) => b.key === c.bandwidth);
   if (bw && bw.key !== "none") addMonthly(bw.label, "Committed data rate", 1, bw.rate);
-  if (c.burstMbps > 0) addMonthly("Burstable bandwidth", "Per Mbps at 95th percentile", c.burstMbps, BURSTABLE);
 
   // Per-unit add-ons.
   for (const a of COLO_ADDONS) {

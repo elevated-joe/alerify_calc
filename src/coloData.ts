@@ -86,10 +86,6 @@ export interface ColoAddon {
 }
 
 export const COLO_ADDONS: ColoAddon[] = [
-  { key: "circuit20", label: "20A A/B redundant circuit pair (2 kW)", unit: "pair", rate: { cost: 150, client: 350 } },
-  { key: "circuit30", label: "30A A/B redundant circuit pair (3 kW)", unit: "pair", rate: { cost: 225, client: 450 } },
-  { key: "pdu20", label: "In-rack 20A PDU (monitored)", unit: "each", rate: { cost: 83.33, client: 45 } },
-  { key: "pdu30", label: "In-rack 30A PDU (monitored)", unit: "each", rate: { cost: 100, client: 60 } },
   { key: "eth", label: "Ethernet drop", unit: "each", rate: { cost: 2.74, client: 8.22 } },
   { key: "fiber", label: "Fiber drop", unit: "each", rate: { cost: 6.94, client: 20.83 } },
   { key: "extraIp", label: "Additional IP (after base block)", unit: "each", rate: { cost: 1, client: 4 } },
@@ -103,6 +99,8 @@ export interface IpBlock {
 }
 
 export const IP_BLOCKS: IpBlock[] = [
+  { key: "none", label: "None", rate: { cost: 0, client: 0 } },
+  { key: "31", label: "/31 — 2 usable", rate: { cost: 2, client: 8 } },
   { key: "29", label: "/29 — 6 usable (base)", rate: { cost: 8, client: 32 } },
   { key: "28", label: "/28 — 14 usable", rate: { cost: 16, client: 64 } },
   { key: "27", label: "/27 — 30 usable", rate: { cost: 32, client: 128 } },
@@ -125,9 +123,6 @@ export const BANDWIDTH: BandwidthOption[] = [
   { key: "500", label: "500 Mbps committed", rate: { cost: 255.37, client: 510.74 } },
   { key: "1000", label: "1 Gbps committed", rate: { cost: 510.74, client: 1021.48 } },
 ];
-
-// Burstable bandwidth billed per Mbps (95th percentile) above committed.
-export const BURSTABLE: ColoRate = { cost: 0.51, client: 10.21 };
 
 // One-time charges.
 export const SETUP_PER_U: ColoRate = { cost: 0, client: 100 }; // "Rackspace per U setup"
