@@ -9,6 +9,7 @@ import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
 import { flagEnabled } from "./flags";
+import { priceColo } from "./coloPricing";
 import ColoPanel from "./ColoPanel";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
 import ProposalSheet from "./ProposalSheet";
@@ -103,8 +104,15 @@ export default function App() {
     }
     const fw = firewallLine(quote.firewall, pricing.addons);
     monthly += fw.client; cost += fw.cost;
-    return { monthly, cost, comparable, aws, azure, fw };
-  }, [quote.servers, quote.firewall, pricing, keyed]);
+    // One-time charges (setup fees).
+    let once = (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0);
+    // Colocation rolls into the grand totals when the feature is enabled.
+    if (coloEnabled) {
+      const cp = priceColo(coloCfg, pricing.colo);
+      monthly += cp.monthlyClient; cost += cp.monthlyCost; once += cp.onceClient;
+    }
+    return { monthly, cost, comparable, aws, azure, fw, once };
+  }, [quote.servers, quote.firewall, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloCfg]);
 
   // Server operations.
   const updateServer = (id: string, patch: Partial<ServerConfig>) =>
@@ -268,6 +276,8 @@ export default function App() {
           <button className="btn btn-ghost" onClick={clearAll}>Clear all</button>
         </div>
 
+        {coloEnabled && <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} />}
+
         <section className="summary card">
           <h2>Quote summary</h2>
           <div className="summary-grid">
@@ -282,6 +292,10 @@ export default function App() {
             <div className="summary-metric">
               <span className="metric-label">Annual total</span>
               <span className="metric-value">{fmt(totals.monthly * 12)}</span>
+            </div>
+            <div className="summary-metric">
+              <span className="metric-label">One-time total</span>
+              <span className="metric-value">{fmt(totals.once)}</span>
             </div>
             <div className="summary-metric internal-only">
               <span className="metric-label">Monthly cost</span>
@@ -341,8 +355,6 @@ export default function App() {
             </p>
           </div>
         </section>
-
-        {coloEnabled && <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} />}
 
         <p className="disclaimer">
           All figures are monthly (USD) and derived from the Alerify pricing sheet. Compute pricing is based on a
