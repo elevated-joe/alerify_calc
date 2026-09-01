@@ -42,7 +42,14 @@ export default function ColoPanel({ catalog, racks, onChange, onRemove }: Props)
             <div className="card-head colo-rack-head">
               <input className="colo-rack-name" value={c.name} onChange={(e) => setRack(c.id, { name: e.target.value })}
                 aria-label="Rack name" />
-              <button className="btn btn-icon" title="Remove rack" onClick={() => removeRack(c.id)}>✕</button>
+              <div className="colo-rack-controls">
+                <label className="colo-qty">
+                  <span>Racks</span>
+                  <input type="number" min={1} step={1} value={c.qty}
+                    onChange={(e) => setRack(c.id, { qty: Math.max(1, parseInt(e.target.value, 10) || 1) })} />
+                </label>
+                <button className="btn btn-icon" title="Remove rack" onClick={() => removeRack(c.id)}>✕</button>
+              </div>
             </div>
 
             <div className="colo-grid">

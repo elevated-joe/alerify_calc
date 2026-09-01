@@ -478,6 +478,9 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .colo-head h2 { display: flex; align-items: center; gap: 10px; }
 .colo-rack { border: 1px solid var(--rule, #d8e2ec); border-radius: 12px; padding: 14px 16px; margin: 14px 0; background: #fbfdff; }
 .colo-rack-head { align-items: center; margin-bottom: 6px; }
+.colo-rack-controls { display: flex; align-items: center; gap: 12px; }
+.colo-qty { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--slate, #5a6b85); text-transform: uppercase; letter-spacing: .06em; }
+.colo-qty input { width: 64px; }
 .colo-rack-name { font-size: 15px; font-weight: 700; color: var(--navy, #0d1b3e); border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; background: transparent; max-width: 320px; }
 .colo-rack-name:hover, .colo-rack-name:focus { border-color: var(--rule, #d8e2ec); background: #fff; }
 .colo-rack-total td { font-weight: 800; color: var(--navy, #0d1b3e); border-top: 2px solid var(--rule, #d8e2ec); padding-top: 8px; }
