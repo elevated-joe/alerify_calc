@@ -469,6 +469,27 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .pr-logo-sm { height: 40px; width: auto; display: block; }
 .pr-bar-title { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--cslate); text-align: right; }
 
+/* ---------- Colocation panel (beta, flag-gated) ---------- */
+.colo-head h2 { display: flex; align-items: center; gap: 10px; }
+.colo-beta { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--magenta, #ec008c); padding: 2px 8px; border-radius: 10px; }
+.colo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; margin-top: 12px; }
+.colo-addons { margin-top: 16px; }
+.colo-sub { display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--slate, #5a6b85); margin-bottom: 8px; }
+.colo-addon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 16px; }
+.colo-addon-grid .field-inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.colo-addon-grid .field-inline label { font-size: 12.5px; margin: 0; }
+.colo-addon-grid .field-inline input { width: 80px; flex: none; }
+.colo-toggles { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 12px; }
+.colo-check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.colo-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.colo-table th { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--slate, #5a6b85); text-align: left; padding: 0 10px 7px 0; border-bottom: 2px solid var(--navy, #0d1b3e); }
+.colo-table td { font-size: 13px; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule, #d8e2ec); vertical-align: top; }
+.colo-detail { color: var(--slate, #5a6b85); }
+.colo-amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-right: 0 !important; }
+.colo-amt small { color: var(--slate, #5a6b85); font-weight: 600; }
+.colo-once td { background: #f7fafd; }
+.colo-summary { margin-top: 18px; }
+
 /* ---------- Print ---------- */
 /* Zero page margin => the browser drops its own date/title header and URL/page footer.
    No fixed `size` (e.g. A4): let the device use its actual paper (US Letter on iOS in the

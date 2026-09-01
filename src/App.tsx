@@ -7,6 +7,8 @@ import Editor from "./Editor";
 import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
 import { parseWorkbook } from "./importXlsx";
+import { flagEnabled } from "./flags";
+import ColoPanel from "./ColoPanel";
 import { downloadProposalPdf, downloadSheetPdf } from "./exportPdf";
 import ProposalSheet from "./ProposalSheet";
 
@@ -37,6 +39,8 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: "", text: "" });
+  // Off-by-default colocation feature. Enable per-browser with ?colo=on.
+  const [coloEnabled] = useState(() => flagEnabled("colo"));
 
   // Persist.
   useEffect(() => savePricing(pricing), [pricing]);
@@ -333,6 +337,8 @@ export default function App() {
             </p>
           </div>
         </section>
+
+        {coloEnabled && <ColoPanel />}
 
         <p className="disclaimer">
           All figures are monthly (USD) and derived from the Alerify pricing sheet. Compute pricing is based on a
