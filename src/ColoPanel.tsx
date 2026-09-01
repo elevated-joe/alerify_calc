@@ -6,9 +6,10 @@ interface Props {
   catalog: ColoCatalog;
   config: ColoConfig;
   onChange: (c: ColoConfig) => void;
+  onRemove?: () => void;
 }
 
-export default function ColoPanel({ catalog, config: c, onChange }: Props) {
+export default function ColoPanel({ catalog, config: c, onChange, onRemove }: Props) {
   const set = (patch: Partial<ColoConfig>) => onChange({ ...c, ...patch });
   const setAddon = (key: string, qty: number) =>
     onChange({ ...c, addons: { ...c.addons, [key]: Math.max(0, qty || 0) } });
@@ -19,7 +20,10 @@ export default function ColoPanel({ catalog, config: c, onChange }: Props) {
   return (
     <section className="card colo">
       <div className="colo-head">
-        <h2>Colocation quote</h2>
+        <div className="card-head">
+          <h2>Colocation quote</h2>
+          {onRemove && <button className="btn btn-icon" title="Remove colocation" onClick={onRemove}>✕</button>}
+        </div>
         <p className="section-hint">Rack space (power included), connectivity and add-ons. Rates from the Alerify data-center services sheet.</p>
       </div>
 

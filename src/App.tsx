@@ -33,9 +33,19 @@ export default function App() {
   const [pricing, setPricing] = useState<Pricing>(() => loadPricing());
   const [quote, setQuote] = useState<Quote>(() => {
     const q = loadQuote();
-    // Backfill one-time-charge defaults for quotes saved before these fields existed.
-    if (q && q.servers?.length) return { ...q, setupClient: q.setupClient ?? 0, setupAdmin: q.setupAdmin ?? 185 };
-    return { quoteName: "", quoteRef: "", firewall: "standard", servers: [seedServer()], setupClient: 0, setupAdmin: 185 };
+    // Backfill defaults for fields added over time. Existing quotes keep their
+    // shared-services section (it used to always show); colocation is opt-in.
+    if (q && q.servers?.length) {
+      return {
+        ...q,
+        setupClient: q.setupClient ?? 0,
+        setupAdmin: q.setupAdmin ?? 185,
+        hasShared: q.hasShared ?? true,
+        hasColo: q.hasColo ?? false,
+      };
+    }
+    // A fresh quote starts empty — the user adds servers/shared/colocation.
+    return { quoteName: "", quoteRef: "", firewall: "standard", servers: [], setupClient: 0, setupAdmin: 185, hasShared: false, hasColo: false };
   });
   const [showInternal, setShowInternal] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
@@ -103,25 +113,30 @@ export default function App() {
       aws += cmp.aws; azure += cmp.azure;
     }
     const fw = firewallLine(quote.firewall, pricing.addons);
-    monthly += fw.client; cost += fw.cost;
+    if (quote.hasShared) { monthly += fw.client; cost += fw.cost; }
     // One-time charges (setup fees).
     let once = (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0);
-    // Colocation rolls into the grand totals when the feature is enabled.
-    if (coloEnabled) {
+    // Colocation rolls into the grand totals only when added.
+    if (coloEnabled && quote.hasColo) {
       const cp = priceColo(coloCfg, pricing.colo);
       monthly += cp.monthlyClient; cost += cp.monthlyCost; once += cp.onceClient;
     }
     return { monthly, cost, comparable, aws, azure, fw, once };
-  }, [quote.servers, quote.firewall, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloCfg]);
+  }, [quote.servers, quote.firewall, quote.hasShared, quote.hasColo, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloCfg]);
 
   // Server operations.
   const updateServer = (id: string, patch: Partial<ServerConfig>) =>
     setQuote((q) => ({ ...q, servers: q.servers.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
   const removeServer = (id: string) => setQuote((q) => ({ ...q, servers: q.servers.filter((s) => s.id !== id) }));
-  const addServer = () => setQuote((q) => ({ ...q, servers: [...q.servers, newServer(q.servers.length + 1)] }));
+  const addServer = () =>
+    setQuote((q) => ({ ...q, servers: [...q.servers, q.servers.length === 0 ? seedServer() : newServer(q.servers.length + 1)] }));
   const clearAll = () => {
     if (confirm("Remove all servers from this quote?")) setQuote((q) => ({ ...q, servers: [] }));
   };
+  const addShared = () => setQuote((q) => ({ ...q, hasShared: true }));
+  const removeShared = () => setQuote((q) => ({ ...q, hasShared: false }));
+  const addColo = () => setQuote((q) => ({ ...q, hasColo: true }));
+  const removeColo = () => setQuote((q) => ({ ...q, hasColo: false }));
 
   // Editor pricing updates.
   const setAddons = (addons: Addons) => setPricing((p) => ({ ...p, addons }));
@@ -236,24 +251,48 @@ export default function App() {
           </div>
         </section>
 
-        <section className="card shared-services">
-          <h2>Shared environment services</h2>
-          <p className="section-hint">Applied once to the whole environment, not per server.</p>
-          <div className="shared-grid">
-            <div className="field">
-              <label htmlFor="fwSelect">Firewall</label>
-              <select id="fwSelect" value={quote.firewall}
-                onChange={(e) => setQuote((q) => ({ ...q, firewall: e.target.value as Quote["firewall"] }))}>
-                <option value="standard">Standard (included)</option>
-                <option value="advanced">Advanced — Small</option>
-              </select>
-            </div>
-            <div className="shared-price">
-              <span className="metric-label">Firewall / month</span>
-              <span className="metric-value">{fmt(totals.fw.client)}</span>
-            </div>
+        <div className="add-row build-bar">
+          <button className="btn btn-primary" onClick={addServer}>+ Add server</button>
+          {!quote.hasShared && (
+            <button className="btn btn-ghost" onClick={addShared}>+ Add shared services</button>
+          )}
+          {coloEnabled && !quote.hasColo && (
+            <button className="btn btn-ghost" onClick={addColo}>+ Add colocation</button>
+          )}
+          {quote.servers.length > 0 && (
+            <button className="btn btn-ghost" onClick={clearAll}>Clear servers</button>
+          )}
+        </div>
+
+        {quote.servers.length === 0 && !quote.hasShared && !quote.hasColo && (
+          <div className="empty-state">
+            Your quote is empty — use the buttons above to add servers, shared services, or colocation.
           </div>
-        </section>
+        )}
+
+        {quote.hasShared && (
+          <section className="card shared-services">
+            <div className="card-head">
+              <h2>Shared environment services</h2>
+              <button className="btn btn-icon" title="Remove shared services" onClick={removeShared}>✕</button>
+            </div>
+            <p className="section-hint">Applied once to the whole environment, not per server.</p>
+            <div className="shared-grid">
+              <div className="field">
+                <label htmlFor="fwSelect">Firewall</label>
+                <select id="fwSelect" value={quote.firewall}
+                  onChange={(e) => setQuote((q) => ({ ...q, firewall: e.target.value as Quote["firewall"] }))}>
+                  <option value="standard">Standard (included)</option>
+                  <option value="advanced">Advanced — Small</option>
+                </select>
+              </div>
+              <div className="shared-price">
+                <span className="metric-label">Firewall / month</span>
+                <span className="metric-value">{fmt(totals.fw.client)}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div>
           {quote.servers.map((s) => (
@@ -269,17 +308,11 @@ export default function App() {
               onRemove={() => removeServer(s.id)}
             />
           ))}
-          {quote.servers.length === 0 && (
-            <div className="empty-state">No servers yet — click “Add server” to start your quote.</div>
-          )}
         </div>
 
-        <div className="add-row">
-          <button className="btn btn-primary" onClick={addServer}>+ Add server</button>
-          <button className="btn btn-ghost" onClick={clearAll}>Clear all</button>
-        </div>
-
-        {coloEnabled && <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} />}
+        {coloEnabled && quote.hasColo && (
+          <ColoPanel catalog={pricing.colo} config={coloCfg} onChange={setColoCfg} onRemove={removeColo} />
+        )}
 
         <section className="summary card">
           <h2>Quote summary</h2>
@@ -385,7 +418,8 @@ export default function App() {
 
       <QuoteDoc quote={quote} addons={pricing.addons} keyed={keyed} />
       <ProposalSheet quote={quote} addons={pricing.addons} keyed={keyed}
-        showColo={coloEnabled} coloConfig={coloCfg} coloCatalog={pricing.colo} />
+        showShared={quote.hasShared} showColo={coloEnabled && quote.hasColo}
+        coloConfig={coloCfg} coloCatalog={pricing.colo} />
       <CompareSheet quote={quote} addons={pricing.addons} compare={pricing.compare} keyed={keyed} />
     </>
   );

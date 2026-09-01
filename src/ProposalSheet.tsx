@@ -7,6 +7,7 @@ interface Props {
   quote: Quote;
   addons: Addons;
   keyed: Map<string, Instance>;
+  showShared?: boolean;
   showColo?: boolean;
   coloConfig?: ColoConfig;
   coloCatalog?: ColoCatalog;
@@ -50,7 +51,7 @@ function Footer() {
   );
 }
 
-export default function ProposalSheet({ quote, addons, keyed, showColo, coloConfig, coloCatalog }: Props) {
+export default function ProposalSheet({ quote, addons, keyed, showShared = true, showColo, coloConfig, coloCatalog }: Props) {
   const customer = quote.quoteName.trim() || "Client";
   const colo = showColo && coloConfig && coloCatalog ? priceColo(coloConfig, coloCatalog) : null;
   const hasColo = !!colo && (colo.monthlyClient > 0 || colo.onceClient > 0);
@@ -80,7 +81,7 @@ export default function ProposalSheet({ quote, addons, keyed, showColo, coloConf
     return { key: v.id, name: v.name || "Server", specs, price: priced.client };
   });
   const fw = firewallLine(quote.firewall, addons);
-  monthly += fw.client;
+  if (showShared) monthly += fw.client;
 
   return (
     <div id="proposalDoc" aria-hidden="true">
@@ -147,11 +148,13 @@ export default function ProposalSheet({ quote, addons, keyed, showColo, coloConf
                     <td className="pr-amt">{fmt(r.price)}</td>
                   </tr>
                 ))}
-                <tr>
-                  <td className="pr-name">Shared services</td>
-                  <td className="pr-spec">{fw.label}</td>
-                  <td className="pr-amt">{fmt(fw.client)}</td>
-                </tr>
+                {showShared && (
+                  <tr>
+                    <td className="pr-name">Shared services</td>
+                    <td className="pr-spec">{fw.label}</td>
+                    <td className="pr-amt">{fmt(fw.client)}</td>
+                  </tr>
+                )}
               </tbody>
               <tfoot>
                 <tr className="pr-total">
