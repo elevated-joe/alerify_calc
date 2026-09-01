@@ -41,8 +41,8 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: "", text: "" });
-  // Off-by-default colocation feature. Enable per-browser with ?colo=on.
-  const [coloEnabled] = useState(() => flagEnabled("colo"));
+  // Colocation is on for everyone by default; a visitor can hide it with ?colo=off.
+  const [coloEnabled] = useState(() => flagEnabled("colo", true));
   const [coloCfg, setColoCfg] = useState(() => loadColoConfig());
 
   // Persist.
