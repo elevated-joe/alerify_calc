@@ -1,6 +1,6 @@
 import type { Pricing, Quote } from "./types";
 import { ADDONS, COLO, COMPARE, COMPUTE } from "./data";
-import { defaultRack, type ColoRack } from "./coloPricing";
+import { defaultColoQuote, defaultRack, defaultShared, type ColoQuote } from "./coloPricing";
 
 const QUOTE_KEY = "alerify_quote_v3";
 const PRICING_KEY = "alerify_pricing_v3";
@@ -43,25 +43,45 @@ export function loadPricing(): Pricing {
   return defaultPricing();
 }
 
-export function loadColoRacks(): ColoRack[] {
+export function loadColoQuote(): ColoQuote {
   try {
     const raw = localStorage.getItem(COLO_KEY);
     if (raw) {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr) && arr.length) return arr.map((r, i) => ({ ...defaultRack(i + 1), ...r }));
+      const q = JSON.parse(raw);
+      // Current shape: { racks, shared }.
+      if (q && Array.isArray(q.racks)) {
+        return {
+          racks: q.racks.map((r: unknown, i: number) => ({ ...defaultRack(i + 1), ...(r as object) })),
+          shared: { ...defaultShared(), ...(q.shared || {}) },
+        };
+      }
+      // Migrate the earlier racks-array shape: hoist IP/bandwidth from the first rack.
+      if (Array.isArray(q) && q.length) {
+        const first = q[0] || {};
+        return {
+          racks: q.map((r: unknown, i: number) => ({ ...defaultRack(i + 1), ...(r as object) })),
+          shared: { ...defaultShared(), ip: first.ip ?? "29", bandwidth: first.bandwidth ?? "none" },
+        };
+      }
     }
-    // Migrate the old single-rack config.
+    // Migrate the original single-rack config.
     const v1 = localStorage.getItem(COLO_KEY_V1);
-    if (v1) return [{ ...defaultRack(1), ...JSON.parse(v1) }];
+    if (v1) {
+      const c = JSON.parse(v1);
+      return {
+        racks: [{ ...defaultRack(1), ...c }],
+        shared: { ...defaultShared(), ip: c.ip ?? "29", bandwidth: c.bandwidth ?? "none" },
+      };
+    }
   } catch {
     /* ignore */
   }
-  return [defaultRack(1)];
+  return defaultColoQuote();
 }
 
-export function saveColoRacks(racks: ColoRack[]): void {
+export function saveColoQuote(q: ColoQuote): void {
   try {
-    localStorage.setItem(COLO_KEY, JSON.stringify(racks));
+    localStorage.setItem(COLO_KEY, JSON.stringify(q));
   } catch {
     /* ignore */
   }

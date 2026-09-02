@@ -476,6 +476,8 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 
 /* ---------- Colocation panel (beta, flag-gated) ---------- */
 .colo-head h2 { display: flex; align-items: center; gap: 10px; }
+.colo-shared { border: 1px solid var(--rule, #d8e2ec); border-radius: 12px; padding: 12px 16px 14px; margin: 12px 0; background: #f3f8fd; }
+.colo-shared .colo-sub small { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--slate, #5a6b85); }
 .colo-rack { border: 1px solid var(--rule, #d8e2ec); border-radius: 12px; padding: 14px 16px; margin: 14px 0; background: #fbfdff; }
 .colo-rack-head { align-items: center; margin-bottom: 6px; }
 .colo-rack-name { font-size: 15px; font-weight: 700; color: var(--navy, #0d1b3e); border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; background: transparent; max-width: 320px; }

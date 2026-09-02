@@ -1,27 +1,31 @@
 import { fmt, marginPct } from "./pricing";
 import { RACK_SIZES, type ColoCatalog } from "./coloData";
-import { priceColo, type ColoRack } from "./coloPricing";
-import { defaultRack } from "./coloPricing";
+import { defaultRack, priceColo, priceColoShared, type ColoQuote } from "./coloPricing";
 
 interface Props {
   catalog: ColoCatalog;
-  racks: ColoRack[];
-  onChange: (racks: ColoRack[]) => void;
+  quote: ColoQuote;
+  onChange: (q: ColoQuote) => void;
   onRemove?: () => void;
 }
 
-export default function ColoPanel({ catalog, racks, onChange, onRemove }: Props) {
-  const setRack = (id: string, patch: Partial<ColoRack>) =>
-    onChange(racks.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+export default function ColoPanel({ catalog, quote, onChange, onRemove }: Props) {
+  const { racks, shared } = quote;
+  const setShared = (patch: Partial<typeof shared>) => onChange({ ...quote, shared: { ...shared, ...patch } });
+  const setRacks = (rs: typeof racks) => onChange({ ...quote, racks: rs });
+  const setRack = (id: string, patch: object) => setRacks(racks.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const setRackAddon = (id: string, key: string, qty: number) =>
-    onChange(racks.map((r) => (r.id === id ? { ...r, addons: { ...r.addons, [key]: Math.max(0, qty || 0) } } : r)));
-  const addRack = () => onChange([...racks, defaultRack(racks.length + 1)]);
-  const removeRack = (id: string) => onChange(racks.filter((r) => r.id !== id));
+    setRacks(racks.map((r) => (r.id === id ? { ...r, addons: { ...r.addons, [key]: Math.max(0, qty || 0) } } : r)));
+  const addRack = () => setRacks([...racks, defaultRack(racks.length + 1)]);
+  const removeRack = (id: string) => setRacks(racks.filter((r) => r.id !== id));
 
-  // Combined totals across all racks.
+  // Per-rack add-ons are the physical drops only (Ethernet / Fiber).
+  const rackAddons = catalog.addons.filter((a) => a.key === "eth" || a.key === "fiber");
+
   const priced = racks.map((r) => priceColo(r, catalog));
-  const monthlyClient = priced.reduce((s, p) => s + p.monthlyClient, 0);
-  const monthlyCost = priced.reduce((s, p) => s + p.monthlyCost, 0);
+  const sharedPriced = priceColoShared(shared, catalog);
+  const monthlyClient = priced.reduce((s, p) => s + p.monthlyClient, 0) + sharedPriced.monthlyClient;
+  const monthlyCost = priced.reduce((s, p) => s + p.monthlyCost, 0) + sharedPriced.monthlyCost;
   const onceClient = priced.reduce((s, p) => s + p.onceClient, 0);
   const margin = marginPct(monthlyCost, monthlyClient);
 
@@ -32,7 +36,35 @@ export default function ColoPanel({ catalog, racks, onChange, onRemove }: Props)
           <h2>Colocation quote</h2>
           {onRemove && <button className="btn btn-icon" title="Remove colocation" onClick={onRemove}>✕</button>}
         </div>
-        <p className="section-hint">Rack space (power included), connectivity and add-ons. Rates from the Alerify data-center services sheet.</p>
+        <p className="section-hint">Rack space (power included) plus shared connectivity. Rates from the Alerify data-center services sheet.</p>
+      </div>
+
+      {/* Shared connectivity — charged once for the whole colocation. */}
+      <div className="colo-shared">
+        <span className="colo-sub">Shared connectivity <small>(whole colocation)</small></span>
+        <div className="colo-grid">
+          <div className="field">
+            <label htmlFor="colo-ip">IP block</label>
+            <select id="colo-ip" value={shared.ip} onChange={(e) => setShared({ ip: e.target.value })}>
+              {catalog.ipBlocks.map((b) => (
+                <option key={b.key} value={b.key}>{b.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="colo-bw">Committed bandwidth</label>
+            <select id="colo-bw" value={shared.bandwidth} onChange={(e) => setShared({ bandwidth: e.target.value })}>
+              {catalog.bandwidth.map((b) => (
+                <option key={b.key} value={b.key}>{b.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="colo-extraip">Additional IPs (after base block)</label>
+            <input id="colo-extraip" type="number" min={0} step={1} value={shared.extraIp}
+              onChange={(e) => setShared({ extraIp: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+          </div>
+        </div>
       </div>
 
       {racks.map((c, ri) => {
@@ -56,7 +88,7 @@ export default function ColoPanel({ catalog, racks, onChange, onRemove }: Props)
               </div>
               <div className="field">
                 <label htmlFor={"size-" + c.id}>Rack space</label>
-                <select id={"size-" + c.id} value={c.size} onChange={(e) => setRack(c.id, { size: e.target.value as ColoRack["size"] })}>
+                <select id={"size-" + c.id} value={c.size} onChange={(e) => setRack(c.id, { size: e.target.value })}>
                   {RACK_SIZES.map((s) => (
                     <option key={s.key} value={s.key}>{s.label}</option>
                   ))}
@@ -65,27 +97,9 @@ export default function ColoPanel({ catalog, racks, onChange, onRemove }: Props)
             </div>
 
             <div className="colo-addons">
-              <span className="colo-sub">Add-ons</span>
-              <div className="colo-grid">
-                <div className="field">
-                  <label htmlFor={"ip-" + c.id}>IP block</label>
-                  <select id={"ip-" + c.id} value={c.ip} onChange={(e) => setRack(c.id, { ip: e.target.value })}>
-                    {catalog.ipBlocks.map((b) => (
-                      <option key={b.key} value={b.key}>{b.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label htmlFor={"bw-" + c.id}>Committed bandwidth</label>
-                  <select id={"bw-" + c.id} value={c.bandwidth} onChange={(e) => setRack(c.id, { bandwidth: e.target.value })}>
-                    {catalog.bandwidth.map((b) => (
-                      <option key={b.key} value={b.key}>{b.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              <span className="colo-sub">Drops</span>
               <div className="colo-addon-grid">
-                {catalog.addons.map((a) => (
+                {rackAddons.map((a) => (
                   <div className="field field-inline" key={a.key}>
                     <label htmlFor={"a-" + c.id + a.key}>{a.label}</label>
                     <input id={"a-" + c.id + a.key} type="number" min={0} step={1} value={c.addons[a.key] || 0}

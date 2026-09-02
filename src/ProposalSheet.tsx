@@ -1,7 +1,7 @@
 import type { Addons, Instance, Quote } from "./types";
 import { firewallLine, fmt, priceServer } from "./pricing";
 import type { ColoCatalog } from "./coloData";
-import { priceColo, type ColoRack } from "./coloPricing";
+import { priceColo, priceColoShared, type ColoQuote } from "./coloPricing";
 
 interface Props {
   quote: Quote;
@@ -9,7 +9,7 @@ interface Props {
   keyed: Map<string, Instance>;
   showShared?: boolean;
   showColo?: boolean;
-  coloRacks?: ColoRack[];
+  coloQuote?: ColoQuote;
   coloCatalog?: ColoCatalog;
 }
 
@@ -51,15 +51,19 @@ function Footer() {
   );
 }
 
-export default function ProposalSheet({ quote, addons, keyed, showShared = true, showColo, coloRacks, coloCatalog }: Props) {
+export default function ProposalSheet({ quote, addons, keyed, showShared = true, showColo, coloQuote, coloCatalog }: Props) {
   const customer = quote.quoteName.trim() || "Client";
-  const coloPriced = showColo && coloRacks && coloCatalog ? coloRacks.map((r) => ({ rack: r, p: priceColo(r, coloCatalog) })) : [];
-  const coloMonthlyLines = coloPriced.flatMap(({ rack, p }) =>
-    p.monthlyLines.map((l) => ({ ...l, detail: `${rack.name} · ${l.detail}` })));
-  const coloOnceLines = coloPriced.flatMap(({ rack, p }) =>
+  const coloOn = !!(showColo && coloQuote && coloCatalog);
+  const coloRackPriced = coloOn ? coloQuote!.racks.map((r) => ({ rack: r, p: priceColo(r, coloCatalog!) })) : [];
+  const coloSharedPriced = coloOn ? priceColoShared(coloQuote!.shared, coloCatalog!) : null;
+  const coloMonthlyLines = [
+    ...(coloSharedPriced ? coloSharedPriced.monthlyLines.map((l) => ({ ...l, detail: `Shared · ${l.detail}` })) : []),
+    ...coloRackPriced.flatMap(({ rack, p }) => p.monthlyLines.map((l) => ({ ...l, detail: `${rack.name} · ${l.detail}` }))),
+  ];
+  const coloOnceLines = coloRackPriced.flatMap(({ rack, p }) =>
     p.onceLines.map((l) => ({ ...l, detail: `${rack.name} · ${l.detail}` })));
-  const coloMonthly = coloPriced.reduce((s, { p }) => s + p.monthlyClient, 0);
-  const coloOnce = coloPriced.reduce((s, { p }) => s + p.onceClient, 0);
+  const coloMonthly = coloRackPriced.reduce((s, { p }) => s + p.monthlyClient, 0) + (coloSharedPriced?.monthlyClient || 0);
+  const coloOnce = coloRackPriced.reduce((s, { p }) => s + p.onceClient, 0);
   const hasColo = coloMonthly > 0 || coloOnce > 0;
   const setupClient = quote.setupClient ?? 0;
   const setupAdmin = quote.setupAdmin ?? 185;
