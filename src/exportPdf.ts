@@ -68,43 +68,107 @@ export async function renderProposalPageImages(
   return out;
 }
 
-// Render a `.proposal-flow` element as continuous content: measure its natural
-// height, round up to whole pages, pin the footer to the last page's bottom,
-// and return the tall image plus the page count to slice it into.
-async function renderFlowImage(
-  html2canvas: (el: HTMLElement, opts: Record<string, unknown>) => Promise<HTMLCanvasElement>,
-  el: HTMLElement
-): Promise<{ img: string; imgH: number; pages: number }> {
+type H2C = (el: HTMLElement, opts: Record<string, unknown>) => Promise<HTMLCanvasElement>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Pdf = any;
+
+// Render a `.proposal-flow` element across as many pages as it needs, choosing
+// page breaks at section boundaries so a table is never split across pages
+// (a single section taller than a page is the only thing that gets split). The
+// cyan footer is stamped at the bottom of every page.
+async function drawFlow(html2canvas: H2C, pdf: Pdf, el: HTMLElement, started: boolean): Promise<boolean> {
   const holder = document.createElement("div");
   holder.setAttribute("aria-hidden", "true");
-  holder.style.cssText =
-    `position:fixed; left:-10000px; top:0; width:${PAGE_W}px; background:#fff; z-index:-1; pointer-events:none;`;
+  holder.style.cssText = `position:fixed; left:-10000px; top:0; width:${PAGE_W}px; background:#fff; z-index:-1; pointer-events:none;`;
   const clone = el.cloneNode(true) as HTMLElement;
   clone.style.maxWidth = "none";
   clone.style.width = PAGE_W + "px";
   clone.style.margin = "0";
-  clone.style.display = "flex";
-  clone.style.flexDirection = "column";
+  clone.style.display = "block";
+
+  // Detach the footer and render it on its own so it can be stamped per page.
+  const footerEl = clone.querySelector<HTMLElement>(".c-footer");
+  if (footerEl) footerEl.remove();
   holder.appendChild(clone);
   document.body.appendChild(holder);
+
+  let footerImg: string | null = null;
+  let footerH = 0;
+  if (footerEl) {
+    const fh = document.createElement("div");
+    fh.style.cssText = holder.style.cssText;
+    footerEl.style.width = PAGE_W + "px";
+    fh.appendChild(footerEl);
+    document.body.appendChild(fh);
+    footerH = footerEl.offsetHeight;
+    const fc = await html2canvas(footerEl, { scale: 2, backgroundColor: "#ffffff", windowWidth: PAGE_W, width: PAGE_W, height: footerH });
+    footerImg = fc.toDataURL("image/jpeg", 0.95);
+    document.body.removeChild(fh);
+  }
+  const usableH = PAGE_H - footerH;
+
   try {
-    const pages = Math.max(1, Math.ceil(clone.offsetHeight / PAGE_H));
-    clone.style.minHeight = pages * PAGE_H + "px";
-    const footer = clone.querySelector(".c-footer") as HTMLElement | null;
-    if (footer) footer.style.marginTop = "auto";
-    const canvas = await html2canvas(clone, {
-      scale: 2, backgroundColor: "#ffffff", windowWidth: PAGE_W, width: PAGE_W, height: clone.offsetHeight,
+    // Flowable blocks: the brand bar plus each body section (kept whole).
+    const blocks: HTMLElement[] = [];
+    const bar = clone.querySelector<HTMLElement>(".pr-bar");
+    if (bar) blocks.push(bar);
+    const body = clone.querySelector<HTMLElement>(".pr-body");
+    if (body) blocks.push(...(Array.from(body.children) as HTMLElement[]));
+    const base = clone.getBoundingClientRect();
+    const measured = blocks.map((b) => {
+      const r = b.getBoundingClientRect();
+      return { top: r.top - base.top, height: r.height };
     });
-    return { img: canvas.toDataURL("image/jpeg", 0.95), imgH: (canvas.height * PAGE_W) / canvas.width, pages };
+    const contentEnd = measured.length ? measured[measured.length - 1].top + measured[measured.length - 1].height : clone.offsetHeight;
+
+    // Greedily pack whole blocks into pages of at most usableH.
+    const pages: { start: number; end: number }[] = [];
+    let start = 0;
+    let i = 0;
+    while (i < measured.length) {
+      let j = i;
+      while (j < measured.length && measured[j].top + measured[j].height - start <= usableH) j++;
+      if (j === i) {
+        // Block taller than a page — split it.
+        pages.push({ start, end: start + usableH });
+        start += usableH;
+        if (measured[i].top + measured[i].height <= start) i++;
+        continue;
+      }
+      const nextStart = j < measured.length ? Math.min(measured[j].top, start + usableH) : contentEnd;
+      pages.push({ start, end: nextStart });
+      start = nextStart;
+      i = j;
+    }
+    if (!pages.length) pages.push({ start: 0, end: Math.min(contentEnd, usableH) });
+    if (pages[pages.length - 1].end < contentEnd) pages[pages.length - 1].end = Math.min(contentEnd, pages[pages.length - 1].start + usableH);
+
+    const canvas = await html2canvas(clone, { scale: 2, backgroundColor: "#ffffff", windowWidth: PAGE_W, width: PAGE_W, height: clone.offsetHeight });
+    const sc = canvas.width / PAGE_W;
+    for (const pg of pages) {
+      const segH = Math.max(1, pg.end - pg.start);
+      const tmp = document.createElement("canvas");
+      tmp.width = canvas.width;
+      tmp.height = Math.round(segH * sc);
+      const ctx = tmp.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, tmp.width, tmp.height);
+      ctx.drawImage(canvas, 0, Math.round(pg.start * sc), canvas.width, tmp.height, 0, 0, canvas.width, tmp.height);
+      if (started) pdf.addPage([PAGE_W, PAGE_H], "portrait");
+      pdf.addImage(tmp.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, PAGE_W, segH);
+      if (footerImg) pdf.addImage(footerImg, "JPEG", 0, PAGE_H - footerH, PAGE_W, footerH);
+      started = true;
+    }
   } finally {
     document.body.removeChild(holder);
   }
+  return started;
 }
 
 /**
  * Export the proposal. `.proposal-page` children render one PDF page each (the
- * cover); a `.proposal-flow` child is content that flows across as many pages as
- * it needs, so pages fill up instead of one-section-per-page.
+ * cover); a `.proposal-flow` child flows across pages, breaking only at section
+ * boundaries so tables stay together.
  */
 export async function downloadProposalPdf(sourceId: string, filename: string): Promise<void> {
   const source = document.getElementById(sourceId);
@@ -117,12 +181,7 @@ export async function downloadProposalPdf(sourceId: string, filename: string): P
   let started = false;
   for (const el of blocks) {
     if (el.classList.contains("proposal-flow")) {
-      const { img, imgH, pages } = await renderFlowImage(html2canvas, el);
-      for (let p = 0; p < pages; p++) {
-        if (started) pdf.addPage([PAGE_W, PAGE_H], "portrait");
-        pdf.addImage(img, "JPEG", 0, -p * PAGE_H, PAGE_W, imgH);
-        started = true;
-      }
+      started = await drawFlow(html2canvas, pdf, el, started);
     } else {
       const { img, imgH } = await renderPageImage(html2canvas, el);
       if (started) pdf.addPage([PAGE_W, PAGE_H], "portrait");
