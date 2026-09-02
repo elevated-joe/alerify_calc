@@ -43,6 +43,19 @@ export function loadPricing(): Pricing {
   return defaultPricing();
 }
 
+// Normalize a stored `shared` object to the current shape. The IP block was
+// once a single `ip` string; it is now an `ips` array (client may hold several).
+function normShared(s: { ip?: string; ips?: unknown; bandwidth?: string; extraIp?: number } | undefined) {
+  const base = defaultShared();
+  if (!s) return base;
+  const ips = Array.isArray(s.ips)
+    ? (s.ips as string[])
+    : typeof s.ip === "string"
+      ? [s.ip]
+      : base.ips;
+  return { ips, bandwidth: s.bandwidth ?? base.bandwidth, extraIp: s.extraIp ?? base.extraIp };
+}
+
 export function loadColoQuote(): ColoQuote {
   try {
     const raw = localStorage.getItem(COLO_KEY);
@@ -52,7 +65,7 @@ export function loadColoQuote(): ColoQuote {
       if (q && Array.isArray(q.racks)) {
         return {
           racks: q.racks.map((r: unknown, i: number) => ({ ...defaultRack(i + 1), ...(r as object) })),
-          shared: { ...defaultShared(), ...(q.shared || {}) },
+          shared: normShared(q.shared),
         };
       }
       // Migrate the earlier racks-array shape: hoist IP/bandwidth from the first rack.
@@ -60,7 +73,7 @@ export function loadColoQuote(): ColoQuote {
         const first = q[0] || {};
         return {
           racks: q.map((r: unknown, i: number) => ({ ...defaultRack(i + 1), ...(r as object) })),
-          shared: { ...defaultShared(), ip: first.ip ?? "29", bandwidth: first.bandwidth ?? "none" },
+          shared: normShared({ ip: first.ip ?? "29", bandwidth: first.bandwidth ?? "none" }),
         };
       }
     }
@@ -70,7 +83,7 @@ export function loadColoQuote(): ColoQuote {
       const c = JSON.parse(v1);
       return {
         racks: [{ ...defaultRack(1), ...c }],
-        shared: { ...defaultShared(), ip: c.ip ?? "29", bandwidth: c.bandwidth ?? "none" },
+        shared: normShared({ ip: c.ip ?? "29", bandwidth: c.bandwidth ?? "none" }),
       };
     }
   } catch {

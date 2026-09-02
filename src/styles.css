@@ -494,6 +494,10 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .colo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; margin-top: 12px; }
 .colo-grid .field { min-width: 0; }
 .colo-grid .field select, .colo-grid .field input { width: 100%; box-sizing: border-box; }
+.colo-ip-list { display: flex; flex-direction: column; gap: 6px; }
+.colo-ip-row { display: flex; align-items: center; gap: 6px; }
+.colo-ip-row select { flex: 1 1 auto; min-width: 0; box-sizing: border-box; }
+.btn-add-ip { align-self: flex-start; padding: 4px 10px; font-size: 12px; }
 .colo-addons { margin-top: 16px; }
 .colo-sub { display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--slate, #5a6b85); margin-bottom: 8px; }
 .colo-addon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 16px; }

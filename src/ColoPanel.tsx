@@ -12,6 +12,9 @@ interface Props {
 export default function ColoPanel({ catalog, quote, onChange, onRemove }: Props) {
   const { racks, shared } = quote;
   const setShared = (patch: Partial<typeof shared>) => onChange({ ...quote, shared: { ...shared, ...patch } });
+  const setIp = (i: number, key: string) => setShared({ ips: shared.ips.map((v, n) => (n === i ? key : v)) });
+  const addIp = () => setShared({ ips: [...shared.ips, "29"] });
+  const removeIp = (i: number) => setShared({ ips: shared.ips.filter((_, n) => n !== i) });
   const setRacks = (rs: typeof racks) => onChange({ ...quote, racks: rs });
   const setRack = (id: string, patch: object) => setRacks(racks.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const setRackAddon = (id: string, key: string, qty: number) =>
@@ -44,12 +47,22 @@ export default function ColoPanel({ catalog, quote, onChange, onRemove }: Props)
         <span className="colo-sub">Shared connectivity <small>(whole colocation)</small></span>
         <div className="colo-grid">
           <div className="field">
-            <label htmlFor="colo-ip">IP block</label>
-            <select id="colo-ip" value={shared.ip} onChange={(e) => setShared({ ip: e.target.value })}>
-              {catalog.ipBlocks.map((b) => (
-                <option key={b.key} value={b.key}>{b.label}</option>
+            <label htmlFor="colo-ip0">IP block{shared.ips.length > 1 ? "s" : ""}</label>
+            <div className="colo-ip-list">
+              {shared.ips.map((key, i) => (
+                <div className="colo-ip-row" key={i}>
+                  <select id={"colo-ip" + i} value={key} onChange={(e) => setIp(i, e.target.value)}>
+                    {catalog.ipBlocks.map((b) => (
+                      <option key={b.key} value={b.key}>{b.label}</option>
+                    ))}
+                  </select>
+                  {shared.ips.length > 1 && (
+                    <button className="btn btn-icon" title="Remove IP block" onClick={() => removeIp(i)}>✕</button>
+                  )}
+                </div>
               ))}
-            </select>
+              <button className="btn btn-ghost btn-add-ip" onClick={addIp}>+ Add IP block</button>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="colo-bw">Committed bandwidth</label>

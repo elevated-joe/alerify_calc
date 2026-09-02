@@ -28,13 +28,13 @@ export function defaultRack(n: number): ColoRack {
 
 // Shared, environment-level connectivity for the whole colocation quote.
 export interface ColoShared {
-  ip: string; // IpBlock.key
+  ips: string[]; // one or more IpBlock.key — client can hold multiple blocks
   bandwidth: string; // BandwidthOption.key
   extraIp: number; // additional IPs after the base block
 }
 
 export function defaultShared(): ColoShared {
-  return { ip: "29", bandwidth: "none", extraIp: 0 };
+  return { ips: ["29"], bandwidth: "none", extraIp: 0 };
 }
 
 export interface ColoQuote {
@@ -114,8 +114,10 @@ export function priceColoShared(s: ColoShared, cat: ColoCatalog): ColoPriced {
     out.monthlyLines.push({ label, detail, qty, client, cost });
     out.monthlyClient += client; out.monthlyCost += cost;
   };
-  const ip = cat.ipBlocks.find((b) => b.key === s.ip);
-  if (ip && ip.key !== "none") add(`IP block ${ip.label.split(" —")[0]}`, ip.label, 1, ip.rate);
+  for (const key of s.ips) {
+    const ip = cat.ipBlocks.find((b) => b.key === key);
+    if (ip && ip.key !== "none") add(`IP block ${ip.label.split(" —")[0]}`, ip.label, 1, ip.rate);
+  }
   const bw = cat.bandwidth.find((b) => b.key === s.bandwidth);
   if (bw && bw.key !== "none") add(bw.label, "Committed data rate", 1, bw.rate);
   const extra = cat.addons.find((a) => a.key === "extraIp");
