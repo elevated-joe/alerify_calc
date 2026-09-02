@@ -93,6 +93,19 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
   const fw = firewallLine(quote.firewall, addons);
   if (showShared) monthly += fw.client;
 
+  // Group every one-time fee (VPC setup + colocation one-time) into one section.
+  const oneTimeLines: { label: string; detail: string; amount: number }[] = [];
+  if (quote.servers.length > 0) {
+    oneTimeLines.push({
+      label: "Client setup",
+      detail: `VM, networking & configuration are ${setupClient > 0 ? "Alerify" : customer} responsibilities`,
+      amount: setupClient,
+    });
+    oneTimeLines.push({ label: "Admin setup fee", detail: "Per new client — one-time provisioning", amount: setupAdmin });
+  }
+  for (const l of coloOnceLines) oneTimeLines.push({ label: l.label, detail: l.detail, amount: l.client });
+  const oneTimeTotal = oneTimeLines.reduce((s, l) => s + l.amount, 0);
+
   return (
     <div id="proposalDoc" aria-hidden="true">
       {/* ---------- Cover (light / low-ink for printing) ---------- */}
@@ -120,10 +133,9 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
         <Footer />
       </section>
 
-      {/* ---------- Page: what's included, monthly services ---------- */}
-      <section className="csheet proposal-page">
+      {/* ---------- Content — continuous flow (fills pages, footer at the end) ---------- */}
+      <section className="csheet proposal-flow">
         <BrandBar customer={customer} />
-
         <div className="pr-body">
           <div className="pr-sec">
             <h2 className="pr-h">What's included</h2>
@@ -178,15 +190,8 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
               </tfoot>
             </table>
           </div>
-        </div>
-        <Footer />
-      </section>
 
-      {/* ---------- Colocation (only when enabled and configured) ---------- */}
-      {hasColo && (
-        <section className="csheet proposal-page">
-          <BrandBar customer={customer} />
-          <div className="pr-body">
+          {hasColo && (
             <div className="pr-sec">
               <h2 className="pr-h">Colocation <small>Monthly</small></h2>
               <table className="pr-items">
@@ -214,63 +219,30 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
                 </tfoot>
               </table>
             </div>
+          )}
 
-            {coloOnceLines.length > 0 && (
-              <div className="pr-sec">
-                <h2 className="pr-h">Colocation — one-time</h2>
-                <table className="pr-items">
-                  <tbody>
-                    {coloOnceLines.map((l, i) => (
-                      <tr key={"co" + i}>
-                        <td className="pr-name">{l.label}</td>
-                        <td className="pr-spec">{l.detail}</td>
-                        <td className="pr-amt">{fmt(l.client)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="pr-total">
-                      <td colSpan={2}>One-time total</td>
-                      <td className="pr-amt">{fmt(coloOnce)}</td>
+          {oneTimeLines.length > 0 && (
+            <div className="pr-sec">
+              <h2 className="pr-h">One-time fees</h2>
+              <table className="pr-items">
+                <tbody>
+                  {oneTimeLines.map((l, i) => (
+                    <tr key={"ot" + i}>
+                      <td className="pr-name">{l.label}</td>
+                      <td className="pr-spec">{l.detail}</td>
+                      <td className="pr-amt">{fmt(l.amount)}</td>
                     </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </div>
-          <Footer />
-        </section>
-      )}
-
-      {/* ---------- Page 2: one-time charges, SLA, billing terms ---------- */}
-      <section className="csheet proposal-page">
-        <BrandBar customer={customer} />
-        <div className="pr-body">
-          <div className="pr-sec">
-            <h2 className="pr-h">One-time installation &amp; setup</h2>
-            <table className="pr-items">
-              <tbody>
-                <tr>
-                  <td className="pr-name">Client setup</td>
-                  <td className="pr-spec">
-                    VM, networking &amp; configuration are {setupClient > 0 ? "Alerify" : customer} responsibilities
-                  </td>
-                  <td className="pr-amt">{fmt(setupClient)}</td>
-                </tr>
-                <tr>
-                  <td className="pr-name">Admin setup fee</td>
-                  <td className="pr-spec">Per new client — one-time provisioning</td>
-                  <td className="pr-amt">{fmt(setupAdmin)}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr className="pr-total">
-                  <td colSpan={2}>One-time charge</td>
-                  <td className="pr-amt">{fmt(setupClient + setupAdmin)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="pr-total">
+                    <td colSpan={2}>One-time total</td>
+                    <td className="pr-amt">{fmt(oneTimeTotal)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
 
           <div className="pr-sec">
             <h2 className="pr-h">Response &amp; resolution times</h2>
@@ -306,14 +278,7 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
               to 5% annually with 90-day notice prior to the conclusion of each anniversary year.
             </p>
           </div>
-        </div>
-        <Footer />
-      </section>
 
-      {/* ---------- Page 3: compensation, responsibility, authorization, signatures ---------- */}
-      <section className="csheet proposal-page">
-        <BrandBar customer={customer} />
-        <div className="pr-body">
           <div className="pr-sec">
             <h2 className="pr-h">Agreement</h2>
             <div className="pr-legal">

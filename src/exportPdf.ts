@@ -68,22 +68,68 @@ export async function renderProposalPageImages(
   return out;
 }
 
+// Render a `.proposal-flow` element as continuous content: measure its natural
+// height, round up to whole pages, pin the footer to the last page's bottom,
+// and return the tall image plus the page count to slice it into.
+async function renderFlowImage(
+  html2canvas: (el: HTMLElement, opts: Record<string, unknown>) => Promise<HTMLCanvasElement>,
+  el: HTMLElement
+): Promise<{ img: string; imgH: number; pages: number }> {
+  const holder = document.createElement("div");
+  holder.setAttribute("aria-hidden", "true");
+  holder.style.cssText =
+    `position:fixed; left:-10000px; top:0; width:${PAGE_W}px; background:#fff; z-index:-1; pointer-events:none;`;
+  const clone = el.cloneNode(true) as HTMLElement;
+  clone.style.maxWidth = "none";
+  clone.style.width = PAGE_W + "px";
+  clone.style.margin = "0";
+  clone.style.display = "flex";
+  clone.style.flexDirection = "column";
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+  try {
+    const pages = Math.max(1, Math.ceil(clone.offsetHeight / PAGE_H));
+    clone.style.minHeight = pages * PAGE_H + "px";
+    const footer = clone.querySelector(".c-footer") as HTMLElement | null;
+    if (footer) footer.style.marginTop = "auto";
+    const canvas = await html2canvas(clone, {
+      scale: 2, backgroundColor: "#ffffff", windowWidth: PAGE_W, width: PAGE_W, height: clone.offsetHeight,
+    });
+    return { img: canvas.toDataURL("image/jpeg", 0.95), imgH: (canvas.height * PAGE_W) / canvas.width, pages };
+  } finally {
+    document.body.removeChild(holder);
+  }
+}
+
 /**
- * Render every `.proposal-page` inside `sourceId` as its own Letter PDF page.
- * Clean page boundaries (one element = one page) for a multi-page document.
+ * Export the proposal. `.proposal-page` children render one PDF page each (the
+ * cover); a `.proposal-flow` child is content that flows across as many pages as
+ * it needs, so pages fill up instead of one-section-per-page.
  */
 export async function downloadProposalPdf(sourceId: string, filename: string): Promise<void> {
   const source = document.getElementById(sourceId);
-  const pages = source ? Array.from(source.querySelectorAll<HTMLElement>(".proposal-page")) : [];
-  if (!pages.length) throw new Error("Nothing to export yet.");
+  const blocks = source
+    ? Array.from(source.querySelectorAll<HTMLElement>(":scope > .proposal-page, :scope > .proposal-flow"))
+    : [];
+  if (!blocks.length) throw new Error("Nothing to export yet.");
   const { html2canvas, jsPDF } = await libs();
   const pdf = new jsPDF({ unit: "px", format: [PAGE_W, PAGE_H], orientation: "portrait" });
-  for (let i = 0; i < pages.length; i++) {
-    const { img, imgH } = await renderPageImage(html2canvas, pages[i]);
-    if (i > 0) pdf.addPage([PAGE_W, PAGE_H], "portrait");
-    // Fit within the page height if a page slightly overflows, else full-bleed width.
-    if (imgH <= PAGE_H + 1) pdf.addImage(img, "JPEG", 0, 0, PAGE_W, imgH);
-    else pdf.addImage(img, "JPEG", 0, 0, (PAGE_H * PAGE_W) / imgH, PAGE_H);
+  let started = false;
+  for (const el of blocks) {
+    if (el.classList.contains("proposal-flow")) {
+      const { img, imgH, pages } = await renderFlowImage(html2canvas, el);
+      for (let p = 0; p < pages; p++) {
+        if (started) pdf.addPage([PAGE_W, PAGE_H], "portrait");
+        pdf.addImage(img, "JPEG", 0, -p * PAGE_H, PAGE_W, imgH);
+        started = true;
+      }
+    } else {
+      const { img, imgH } = await renderPageImage(html2canvas, el);
+      if (started) pdf.addPage([PAGE_W, PAGE_H], "portrait");
+      if (imgH <= PAGE_H + 1) pdf.addImage(img, "JPEG", 0, 0, PAGE_W, imgH);
+      else pdf.addImage(img, "JPEG", 0, 0, (PAGE_H * PAGE_W) / imgH, PAGE_H);
+      started = true;
+    }
   }
   pdf.save(filename);
 }
