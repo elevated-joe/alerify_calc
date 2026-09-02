@@ -330,7 +330,7 @@ export default function App() {
             </div>
             <div className="summary-grid vpc-summary">
               <div className="summary-metric">
-                <span className="metric-label">VPC monthly</span>
+                <span className="metric-label">Virtual private cloud monthly</span>
                 <span className="metric-value accent">{fmt(totals.serversClient)}</span>
               </div>
               <div className="summary-metric">
