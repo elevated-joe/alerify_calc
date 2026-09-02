@@ -115,8 +115,8 @@ export default function App() {
     const serversClient = monthly, serversCost = cost;
     const fw = firewallLine(quote.firewall, pricing.addons);
     if (quote.hasShared) { monthly += fw.client; cost += fw.cost; }
-    // One-time charges (setup fees).
-    let once = (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0);
+    // One-time charges (VPC setup fees — only when there are servers).
+    let once = quote.servers.length > 0 ? (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0) : 0;
     // Colocation rolls into the grand totals only when added.
     if (coloEnabled && quote.hasColo) {
       for (const r of coloQuote.racks) {
@@ -135,6 +135,8 @@ export default function App() {
   const removeServer = (id: string) => setQuote((q) => ({ ...q, servers: q.servers.filter((s) => s.id !== id) }));
   const addServer = () =>
     setQuote((q) => ({ ...q, servers: [...q.servers, q.servers.length === 0 ? seedServer() : newServer(q.servers.length + 1)] }));
+  // Creating the VPC seeds a first server and turns on shared services.
+  const addVpc = () => setQuote((q) => ({ ...q, servers: [seedServer()], hasShared: true }));
   const clearAll = () => {
     if (confirm("Remove all servers from this quote?")) setQuote((q) => ({ ...q, servers: [] }));
   };
@@ -244,21 +246,11 @@ export default function App() {
             <input id="quoteRef" type="text" placeholder="optional"
               value={quote.quoteRef} onChange={(e) => setQuote((q) => ({ ...q, quoteRef: e.target.value }))} />
           </div>
-          <div className="field">
-            <label htmlFor="setupClient">Client setup ($, one-time)</label>
-            <input id="setupClient" type="number" min={0} step={5} value={quote.setupClient}
-              onChange={(e) => setQuote((q) => ({ ...q, setupClient: Math.max(0, parseFloat(e.target.value) || 0) }))} />
-          </div>
-          <div className="field">
-            <label htmlFor="setupAdmin">Admin setup fee ($, one-time)</label>
-            <input id="setupAdmin" type="number" min={0} step={5} value={quote.setupAdmin}
-              onChange={(e) => setQuote((q) => ({ ...q, setupAdmin: Math.max(0, parseFloat(e.target.value) || 0) }))} />
-          </div>
         </section>
 
         <div className="add-row build-bar">
           {quote.servers.length === 0 && (
-            <button className="btn btn-primary" onClick={addServer}>+ Add virtual private cloud</button>
+            <button className="btn btn-primary" onClick={addVpc}>+ Add virtual private cloud</button>
           )}
           {!quote.hasShared && (
             <button className="btn btn-ghost" onClick={addShared}>+ Add shared services</button>
@@ -305,6 +297,18 @@ export default function App() {
               <button className="btn btn-icon" title="Remove all servers" onClick={clearAll}>✕</button>
             </div>
             <p className="section-hint">Per-server compute, storage, IPs, SQL and backups.</p>
+            <div className="vpc-setup">
+              <div className="field">
+                <label htmlFor="setupClient">Client setup ($, one-time)</label>
+                <input id="setupClient" type="number" min={0} step={5} value={quote.setupClient}
+                  onChange={(e) => setQuote((q) => ({ ...q, setupClient: Math.max(0, parseFloat(e.target.value) || 0) }))} />
+              </div>
+              <div className="field">
+                <label htmlFor="setupAdmin">Admin setup fee ($, one-time)</label>
+                <input id="setupAdmin" type="number" min={0} step={5} value={quote.setupAdmin}
+                  onChange={(e) => setQuote((q) => ({ ...q, setupAdmin: Math.max(0, parseFloat(e.target.value) || 0) }))} />
+              </div>
+            </div>
             <div className="vpc-servers">
               {quote.servers.map((s) => (
                 <ServerCard
@@ -351,10 +355,6 @@ export default function App() {
         <section className="summary card">
           <h2>Quote summary</h2>
           <div className="summary-grid">
-            <div className="summary-metric">
-              <span className="metric-label">Servers</span>
-              <span className="metric-value">{quote.servers.length}</span>
-            </div>
             <div className="summary-metric">
               <span className="metric-label">Monthly total</span>
               <span className="metric-value accent">{fmt(totals.monthly)}</span>

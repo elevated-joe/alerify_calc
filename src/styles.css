@@ -470,6 +470,7 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .pr-bar-title { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--cslate); text-align: right; }
 
 /* ---------- Virtual Private Cloud box (wraps the server cards) ---------- */
+.vpc-setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; margin: 4px 0 10px; }
 .vpc .server.card { box-shadow: none; border: 1px solid var(--rule, #d8e2ec); margin: 12px 0; background: #fbfdff; }
 .vpc-summary { margin-top: 14px; }
 
