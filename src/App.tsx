@@ -112,6 +112,7 @@ export default function App() {
       monthly += priced.client; cost += priced.cost; comparable += priced.comparable;
       aws += cmp.aws; azure += cmp.azure;
     }
+    const serversClient = monthly, serversCost = cost;
     const fw = firewallLine(quote.firewall, pricing.addons);
     if (quote.hasShared) { monthly += fw.client; cost += fw.cost; }
     // One-time charges (setup fees).
@@ -125,7 +126,7 @@ export default function App() {
       const sp = priceColoShared(coloQuote.shared, pricing.colo);
       monthly += sp.monthlyClient; cost += sp.monthlyCost;
     }
-    return { monthly, cost, comparable, aws, azure, fw, once };
+    return { monthly, cost, comparable, aws, azure, fw, once, serversClient, serversCost };
   }, [quote.servers, quote.firewall, quote.hasShared, quote.hasColo, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloQuote]);
 
   // Server operations.
@@ -256,15 +257,14 @@ export default function App() {
         </section>
 
         <div className="add-row build-bar">
-          <button className="btn btn-primary" onClick={addServer}>+ Add server</button>
+          {quote.servers.length === 0 && (
+            <button className="btn btn-primary" onClick={addServer}>+ Add virtual private cloud</button>
+          )}
           {!quote.hasShared && (
             <button className="btn btn-ghost" onClick={addShared}>+ Add shared services</button>
           )}
           {coloEnabled && !quote.hasColo && (
             <button className="btn btn-ghost" onClick={addColo}>+ Add colocation</button>
-          )}
-          {quote.servers.length > 0 && (
-            <button className="btn btn-ghost" onClick={clearAll}>Clear servers</button>
           )}
         </div>
 
@@ -298,21 +298,51 @@ export default function App() {
           </section>
         )}
 
-        <div>
-          {quote.servers.map((s) => (
-            <ServerCard
-              key={s.id}
-              server={s}
-              addons={pricing.addons}
-              compare={pricing.compare}
-              keyed={keyed}
-              vcpus={vcpus}
-              compute={pricing.compute}
-              onChange={(patch) => updateServer(s.id, patch)}
-              onRemove={() => removeServer(s.id)}
-            />
-          ))}
-        </div>
+        {quote.servers.length > 0 && (
+          <section className="card vpc">
+            <div className="card-head">
+              <h2>Virtual Private Cloud</h2>
+              <button className="btn btn-icon" title="Remove all servers" onClick={clearAll}>✕</button>
+            </div>
+            <p className="section-hint">Per-server compute, storage, IPs, SQL and backups.</p>
+            <div className="vpc-servers">
+              {quote.servers.map((s) => (
+                <ServerCard
+                  key={s.id}
+                  server={s}
+                  addons={pricing.addons}
+                  compare={pricing.compare}
+                  keyed={keyed}
+                  vcpus={vcpus}
+                  compute={pricing.compute}
+                  onChange={(patch) => updateServer(s.id, patch)}
+                  onRemove={() => removeServer(s.id)}
+                />
+              ))}
+            </div>
+            <div className="add-row">
+              <button className="btn btn-ghost" onClick={addServer}>+ Add server</button>
+            </div>
+            <div className="summary-grid vpc-summary">
+              <div className="summary-metric">
+                <span className="metric-label">VPC monthly</span>
+                <span className="metric-value accent">{fmt(totals.serversClient)}</span>
+              </div>
+              <div className="summary-metric">
+                <span className="metric-label">Annual (monthly × 12)</span>
+                <span className="metric-value">{fmt(totals.serversClient * 12)}</span>
+              </div>
+              <div className="summary-metric internal-only">
+                <span className="metric-label">Monthly cost</span>
+                <span className="metric-value">{fmt(totals.serversCost)}</span>
+              </div>
+              <div className="summary-metric internal-only">
+                <span className="metric-label">Monthly profit</span>
+                <span className="metric-value">{fmt(totals.serversClient - totals.serversCost)}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {coloEnabled && quote.hasColo && (
           <ColoPanel catalog={pricing.colo} quote={coloQuote} onChange={setColoQuote} onRemove={removeColo} />

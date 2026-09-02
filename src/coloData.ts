@@ -101,7 +101,7 @@ export interface IpBlock {
 export const IP_BLOCKS: IpBlock[] = [
   { key: "none", label: "None", rate: { cost: 0, client: 0 } },
   { key: "31", label: "/31 — 1 usable", rate: { cost: 1, client: 4 } },
-  { key: "29", label: "/29 — 6 usable (base)", rate: { cost: 8, client: 32 } },
+  { key: "29", label: "/29 — 6 usable", rate: { cost: 8, client: 32 } },
   { key: "28", label: "/28 — 14 usable", rate: { cost: 16, client: 64 } },
   { key: "27", label: "/27 — 30 usable", rate: { cost: 32, client: 128 } },
   { key: "26", label: "/26 — 62 usable", rate: { cost: 64, client: 256 } },

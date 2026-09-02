@@ -469,6 +469,10 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .pr-logo-sm { height: 40px; width: auto; display: block; }
 .pr-bar-title { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--cslate); text-align: right; }
 
+/* ---------- Virtual Private Cloud box (wraps the server cards) ---------- */
+.vpc .server.card { box-shadow: none; border: 1px solid var(--rule, #d8e2ec); margin: 12px 0; background: #fbfdff; }
+.vpc-summary { margin-top: 14px; }
+
 /* ---------- Add-to-quote build bar + removable section heads ---------- */
 .build-bar { flex-wrap: wrap; gap: 10px; margin: 6px 0 14px; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
