@@ -116,7 +116,8 @@ export default function App() {
     const fw = firewallLine(quote.firewall, pricing.addons);
     if (quote.hasShared) { monthly += fw.client; cost += fw.cost; }
     // One-time charges (VPC setup fees — only when there are servers).
-    let once = quote.servers.length > 0 ? (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0) : 0;
+    const serversOnce = quote.servers.length > 0 ? (quote.setupClient ?? 0) + (quote.setupAdmin ?? 0) : 0;
+    let once = serversOnce;
     // Colocation rolls into the grand totals only when added.
     if (coloEnabled && quote.hasColo) {
       for (const r of coloQuote.racks) {
@@ -126,7 +127,7 @@ export default function App() {
       const sp = priceColoShared(coloQuote.shared, pricing.colo);
       monthly += sp.monthlyClient; cost += sp.monthlyCost;
     }
-    return { monthly, cost, comparable, aws, azure, fw, once, serversClient, serversCost };
+    return { monthly, cost, comparable, aws, azure, fw, once, serversOnce, serversClient, serversCost };
   }, [quote.servers, quote.firewall, quote.hasShared, quote.hasColo, quote.setupClient, quote.setupAdmin, pricing, keyed, coloEnabled, coloQuote]);
 
   // Server operations.
@@ -331,6 +332,10 @@ export default function App() {
               <div className="summary-metric">
                 <span className="metric-label">VPC monthly</span>
                 <span className="metric-value accent">{fmt(totals.serversClient)}</span>
+              </div>
+              <div className="summary-metric">
+                <span className="metric-label">One-time total</span>
+                <span className="metric-value">{fmt(totals.serversOnce)}</span>
               </div>
               <div className="summary-metric">
                 <span className="metric-label">Annual (monthly × 12)</span>
