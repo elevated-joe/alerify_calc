@@ -3,7 +3,6 @@ import { RACK_SIZES, type ColoCatalog, type ColoRate, type SizeKey } from "./col
 export interface ColoConfig {
   tier: string; // RackTier.key
   size: SizeKey;
-  qty: number; // number of identical racks of this config
   ip: string; // IpBlock.key
   bandwidth: string; // BandwidthOption.key
   addons: Record<string, number>; // ColoAddon.key -> qty
@@ -12,7 +11,7 @@ export interface ColoConfig {
 }
 
 export function defaultColo(): ColoConfig {
-  return { tier: "SD-5kW", size: "quarter", qty: 1, ip: "29", bandwidth: "none", addons: {}, setup: true, biometrics: false };
+  return { tier: "SD-5kW", size: "quarter", ip: "29", bandwidth: "none", addons: {}, setup: true, biometrics: false };
 }
 
 // A named rack line within a colocation quote (a quote can have several).
@@ -53,20 +52,16 @@ export function priceColo(c: ColoConfig, cat: ColoCatalog): ColoPriced {
   if (!tier || !size) return zero;
   const out: ColoPriced = { monthlyLines: [], onceLines: [], monthlyClient: 0, monthlyCost: 0, onceClient: 0, onceCost: 0 };
 
-  // Every amount scales by the number of identical racks of this config.
-  const racks = Math.max(1, Math.floor(c.qty || 1));
-  const note = racks > 1 ? ` · ×${racks} racks` : "";
-
   const addMonthly = (label: string, detail: string, qty: number, r: ColoRate) => {
     if (qty <= 0) return;
-    const client = r.client * qty * racks, cost = r.cost * qty * racks;
-    out.monthlyLines.push({ label, detail: detail + note, qty, client, cost });
+    const client = r.client * qty, cost = r.cost * qty;
+    out.monthlyLines.push({ label, detail, qty, client, cost });
     out.monthlyClient += client; out.monthlyCost += cost;
   };
   const addOnce = (label: string, detail: string, qty: number, r: ColoRate) => {
     if (qty <= 0) return;
-    const client = r.client * qty * racks, cost = r.cost * qty * racks;
-    out.onceLines.push({ label, detail: detail + note, qty, client, cost, once: true });
+    const client = r.client * qty, cost = r.cost * qty;
+    out.onceLines.push({ label, detail, qty, client, cost, once: true });
     out.onceClient += client; out.onceCost += cost;
   };
 
