@@ -243,7 +243,14 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
               </table>
             </div>
           )}
+        </div>
+        <Footer />
+      </section>
 
+      {/* ---------- Terms & signature — fit to one page ---------- */}
+      <section className="csheet proposal-page pr-terms">
+        <BrandBar customer={customer} />
+        <div className="pr-body">
           <div className="pr-sec">
             <h2 className="pr-h">Response &amp; resolution times</h2>
             <table className="pr-sla">
