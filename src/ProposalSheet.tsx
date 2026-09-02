@@ -106,6 +106,11 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
   for (const l of coloOnceLines) oneTimeLines.push({ label: l.label, detail: l.detail, amount: l.client });
   const oneTimeTotal = oneTimeLines.reduce((s, l) => s + l.amount, 0);
 
+  // Totals across everything, for the closing quote summary.
+  const totalMonthly = monthly + coloMonthly;
+  const totalAnnual = totalMonthly * 12;
+  const dueAtSigning = totalMonthly + oneTimeTotal;
+
   return (
     <div id="proposalDoc" aria-hidden="true">
       {/* ---------- Cover (light / low-ink for printing) ---------- */}
@@ -243,6 +248,49 @@ export default function ProposalSheet({ quote, addons, keyed, showShared = true,
               </table>
             </div>
           )}
+
+          <div className="pr-sec">
+            <h2 className="pr-h">Quote summary</h2>
+            <table className="pr-items pr-summary">
+              <tbody>
+                <tr>
+                  <td className="pr-name">Private cloud base services</td>
+                  <td className="pr-spec">Monthly recurring</td>
+                  <td className="pr-amt">{fmt(monthly)}</td>
+                </tr>
+                {hasColo && (
+                  <tr>
+                    <td className="pr-name">Colocation</td>
+                    <td className="pr-spec">Monthly recurring</td>
+                    <td className="pr-amt">{fmt(coloMonthly)}</td>
+                  </tr>
+                )}
+                <tr className="pr-sub">
+                  <td className="pr-name">Total monthly recurring</td>
+                  <td className="pr-spec">Billed monthly</td>
+                  <td className="pr-amt">{fmt(totalMonthly)}</td>
+                </tr>
+                <tr>
+                  <td className="pr-name">Annual recurring</td>
+                  <td className="pr-spec">12 × monthly</td>
+                  <td className="pr-amt">{fmt(totalAnnual)}</td>
+                </tr>
+                {oneTimeTotal > 0 && (
+                  <tr>
+                    <td className="pr-name">One-time fees</td>
+                    <td className="pr-spec">Charged once at setup</td>
+                    <td className="pr-amt">{fmt(oneTimeTotal)}</td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="pr-total">
+                  <td colSpan={2}>Due at signing (first month + one-time)</td>
+                  <td className="pr-amt">{fmt(dueAtSigning)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
         <Footer />
       </section>

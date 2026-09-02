@@ -445,6 +445,8 @@ body.show-compare .summary .compare-only.compare-panel { display: block; }
 .pr-total td { border-top: 2px solid var(--ci); font-size: 14px; color: var(--ci); }
 .pr-total .pr-amt { color: var(--cy); font-size: 16px; }
 .pr-annual td { font-size: 11.5px; color: var(--cslate); font-weight: 700; padding-top: 4px; }
+.pr-summary .pr-sub td { border-top: 1.5px solid var(--ci); font-weight: 800; color: var(--ci); }
+.pr-summary .pr-sub .pr-amt { color: var(--ci); }
 
 .pr-sla { width: 100%; border-collapse: collapse; }
 .pr-sla thead th { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--ci); text-align: left; padding: 7px 9px; }
