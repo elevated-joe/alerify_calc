@@ -14,7 +14,6 @@ interface Props {
   showColo: boolean;
   onReset: () => void;
   onExport: () => void;
-  onImport: (file: File) => void;
   onClose: () => void;
 }
 
@@ -131,7 +130,6 @@ export default function Editor({
   showColo,
   onReset,
   onExport,
-  onImport,
   onClose,
 }: Props) {
   const { addons, compare, compute, colo } = pricing;
@@ -220,19 +218,6 @@ export default function Editor({
           <button className="btn btn-ghost" onClick={onReset}>
             Reset to defaults
           </button>
-          <label className="btn btn-ghost file-btn" title="Import rates from an Alerify_Pricing_Sheet.xlsx">
-            Import .xlsx
-            <input
-              type="file"
-              accept=".xlsx"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onImport(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
           <button className="btn btn-ghost" onClick={onClose}>
             Close editor
           </button>

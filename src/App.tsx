@@ -7,7 +7,6 @@ import ServerCard from "./ServerCard";
 import Editor from "./Editor";
 import QuoteDoc from "./QuoteDoc";
 import CompareSheet from "./CompareSheet";
-import { parseWorkbook } from "./importXlsx";
 import { flagEnabled } from "./flags";
 import { priceColo, priceColoShared } from "./coloPricing";
 import ColoPanel from "./ColoPanel";
@@ -159,19 +158,6 @@ export default function App() {
     setStatus({ kind: "", text: "" });
   };
 
-  async function importFile(file: File) {
-    try {
-      const parsed = await parseWorkbook(file);
-      setPricing((p) => ({
-        ...p,
-        compute: parsed.compute,
-        addons: { ...p.addons, ...parsed.addons, sqlMinCores: p.addons.sqlMinCores },
-      }));
-      setStatus({ kind: "ok", text: `✓ Imported ${parsed.count} instances and add-on rates from ${file.name}.` });
-    } catch (err) {
-      setStatus({ kind: "err", text: "✕ " + (err instanceof Error ? err.message : "Could not read that file.") });
-    }
-  }
 
   function exportDataTs() {
     const lines = [
@@ -450,7 +436,6 @@ export default function App() {
           showColo={coloEnabled}
           onReset={resetPricing}
           onExport={exportDataTs}
-          onImport={importFile}
           onClose={() => setEditing(false)}
         />
       )}
