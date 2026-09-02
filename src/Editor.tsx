@@ -135,6 +135,7 @@ export default function Editor({
   const { addons, compare, compute, colo } = pricing;
   const [bulkMargin, setBulkMargin] = useState("70");
   const [bulkTarget, setBulkTarget] = useState<"both" | "linux" | "windows">("both");
+  const [bulkColoMargin, setBulkColoMargin] = useState("70");
 
   function setAddon(key: keyof Addons, field: "client" | "cost", value: number) {
     const next = { ...addons, [key]: { ...(addons[key] as { client: number; cost: number }), [field]: value } };
@@ -182,6 +183,19 @@ export default function Editor({
         winClient: doWin ? priceFromMargin(c.winCost, margin) : c.winClient,
       }))
     );
+  }
+
+  function applyBulkColoMargin(margin: number) {
+    if (!isFinite(margin)) return;
+    const rows = colo.tiers.length * RACK_SIZES.length;
+    if (!confirm(`Set all ${rows} rack-space prices to a ${margin}% margin? This overwrites their current prices.`)) return;
+    updateColo((cat) => {
+      for (const t of cat.tiers) {
+        for (const sz of RACK_SIZES) {
+          t.space[sz.key].client = priceFromMargin(t.space[sz.key].cost, margin);
+        }
+      }
+    });
   }
 
   function addInstance() {
@@ -365,6 +379,22 @@ export default function Editor({
           <h3 className="editor-h3">
             Colocation — rack space <small>(power included; per tier &amp; size)</small>
           </h3>
+          <div className="bulk-bar">
+            <span className="bulk-label">Bulk margin</span>
+            <input
+              type="number"
+              step={0.5}
+              className="margin-in"
+              value={bulkColoMargin}
+              onChange={(e) => setBulkColoMargin(e.target.value)}
+              aria-label="Bulk rack-space margin percent"
+            />
+            <span className="bulk-pct">%</span>
+            <button className="btn btn-ghost" onClick={() => applyBulkColoMargin(parseFloat(bulkColoMargin))}>
+              Apply to all {colo.tiers.length * RACK_SIZES.length}
+            </button>
+            <span className="bulk-hint">Sets each rack-space price from its cost.</span>
+          </div>
           <div className="edit-scroll">
             <table className="edit-table">
               <thead>
