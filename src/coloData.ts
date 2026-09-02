@@ -116,17 +116,28 @@ export interface BandwidthOption {
   rate: ColoRate;
 }
 
+// Per-Gbps committed rate (from the 1 Gbps line). Whole-Gbps tiers scale linearly.
+const GBPS_COST = 510.74;
+const GBPS_CLIENT = 1021.48;
+
 export const BANDWIDTH: BandwidthOption[] = [
   { key: "none", label: "None", rate: { cost: 0, client: 0 } },
   { key: "100", label: "100 Mbps committed", rate: { cost: 51.07, client: 102.15 } },
   { key: "250", label: "250 Mbps committed", rate: { cost: 127.69, client: 255.37 } },
   { key: "500", label: "500 Mbps committed", rate: { cost: 255.37, client: 510.74 } },
-  { key: "1000", label: "1 Gbps committed", rate: { cost: 510.74, client: 1021.48 } },
+  // 1–20 Gbps committed, in 1 Gbps increments (key stays in Mbps for continuity).
+  ...Array.from({ length: 20 }, (_, i) => {
+    const g = i + 1;
+    return {
+      key: String(g * 1000),
+      label: `${g} Gbps committed`,
+      rate: { cost: +(g * GBPS_COST).toFixed(2), client: +(g * GBPS_CLIENT).toFixed(2) },
+    };
+  }),
 ];
 
 // One-time charges.
 export const SETUP_PER_U: ColoRate = { cost: 0, client: 100 }; // "Rackspace per U setup"
-export const BIOMETRICS: ColoRate = { cost: 2000, client: 2000 }; // optional rack biometric access
 
 // The editable colocation catalog (persisted in Pricing.colo).
 export interface ColoCatalog {
@@ -135,7 +146,6 @@ export interface ColoCatalog {
   bandwidth: BandwidthOption[];
   addons: ColoAddon[];
   setupPerU: ColoRate;
-  biometrics: ColoRate;
 }
 
 export const COLO_DEFAULT: ColoCatalog = {
@@ -144,5 +154,4 @@ export const COLO_DEFAULT: ColoCatalog = {
   bandwidth: BANDWIDTH,
   addons: COLO_ADDONS,
   setupPerU: SETUP_PER_U,
-  biometrics: BIOMETRICS,
 };

@@ -125,10 +125,6 @@ export default function ColoPanel({ catalog, quote, onChange, onRemove }: Props)
                   <input type="checkbox" checked={c.setup} onChange={(e) => setRack(c.id, { setup: e.target.checked })} />
                   Install &amp; setup (one-time, per U)
                 </label>
-                <label className="colo-check">
-                  <input type="checkbox" checked={c.biometrics} onChange={(e) => setRack(c.id, { biometrics: e.target.checked })} />
-                  Rack biometric access (one-time $2,000)
-                </label>
               </div>
             </div>
 

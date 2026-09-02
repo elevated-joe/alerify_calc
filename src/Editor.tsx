@@ -462,7 +462,6 @@ export default function Editor({
                     rows.push({ label: b.label, basis: "committed / mo", rate: b.rate, set: (cat, f, v) => { cat.bandwidth[i].rate[f] = v; } });
                   });
                   rows.push({ label: "Install & setup", basis: "per U / one-time", rate: colo.setupPerU, set: (cat, f, v) => { cat.setupPerU[f] = v; } });
-                  rows.push({ label: "Rack biometric access", basis: "one-time", rate: colo.biometrics, set: (cat, f, v) => { cat.biometrics[f] = v; } });
                   return rows.map((r, idx) => (
                     <tr key={idx}>
                       <td><strong>{r.label}</strong></td>

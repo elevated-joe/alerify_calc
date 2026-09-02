@@ -7,11 +7,10 @@ export interface ColoConfig {
   size: SizeKey;
   addons: Record<string, number>; // per-rack ColoAddon.key -> qty (Ethernet/Fiber drops)
   setup: boolean; // per-U install
-  biometrics: boolean;
 }
 
 export function defaultColo(): ColoConfig {
-  return { tier: "SD-5kW", size: "quarter", addons: {}, setup: true, biometrics: false };
+  return { tier: "SD-5kW", size: "quarter", addons: {}, setup: true };
 }
 
 // A named rack line within a colocation quote (a quote can have several).
@@ -100,7 +99,6 @@ export function priceColo(c: ColoConfig, cat: ColoCatalog): ColoPriced {
 
   // One-time.
   if (c.setup) addOnce("Install & setup", `${size.u} U × per-U setup`, size.u, cat.setupPerU);
-  if (c.biometrics) addOnce("Rack biometric access", "One-time provisioning", 1, cat.biometrics);
 
   return out;
 }
